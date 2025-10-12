@@ -59,8 +59,16 @@ jobs:
 
       - name: Run database tests
         run: |
-          pytest test/tests/test_db.py test/tests/test_database_setup.py -v --tb=short --maxfail=3
+          pytest test/tests/infrastructure/test_db.py test/tests/infrastructure/test_database_setup.py -v --tb=short --maxfail=3
 
-      - name: Run API tests
+      - name: Run integration tests
+        run: |
+          pytest test/tests/integration/ -v --tb=short --maxfail=3
+
+      - name: Run E2E tests
+        run: |
+          pytest test/tests/E2E/ -v --tb=short --maxfail=3
+
+      - name: Run user API tests
         run: |
           pytest test/tests/test_user_api.py -v --tb=short --maxfail=3
