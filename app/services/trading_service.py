@@ -40,7 +40,7 @@ class TradingService:
             ValueError: If validation fails
         """
         # 1. Validate offer
-        offer = Offer.query.get(offer_id)
+        offer = db.session.get(Offer, offer_id)
         
         if not offer:
             raise ValueError("Offer not found")

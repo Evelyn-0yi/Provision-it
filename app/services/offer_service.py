@@ -93,7 +93,7 @@ class OfferService:
         Returns:
             Offer or None if not found
         """
-        return Offer.query.get(offer_id)
+        return db.session.get(Offer, offer_id)
 
     @staticmethod
     def get_all_offers(page: int = 1, per_page: int = 20, active_only: bool = True) -> Dict[str, Any]:
@@ -145,7 +145,7 @@ class OfferService:
         """
 
         # 根据id update
-        offer = Offer.query.get(offer_id)
+        offer = db.session.get(Offer, offer_id)
         if not offer:
             return None
         
@@ -183,7 +183,7 @@ class OfferService:
         Returns:
             True if deleted, False if not found
         """
-        offer = Offer.query.get(offer_id)
+        offer = db.session.get(Offer, offer_id)
         if not offer or not offer.is_valid:
             return {"success": False, "message": "Offer not found or already inactive"}
 
