@@ -76,6 +76,16 @@ jobs:
         run: |
           pytest test/tests/integration/ -v --tb=short --maxfail=3
 
+      - name: Install frontend test dependencies
+        run: |
+          cd test/tests/Jest
+          npm install
+
+      - name: Run frontend unit tests (Jest)
+        run: |
+          cd test/tests/Jest
+          npm test
+
       - name: Start Flask server for E2E tests
         env:
           FLASK_HOST: 0.0.0.0

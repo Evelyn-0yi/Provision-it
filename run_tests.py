@@ -367,11 +367,72 @@ def run_tests(args):
     return success
 
 
+def run_frontend_tests(args):
+    """Run frontend unit tests using Jest."""
+    print_step(3, "Running Frontend Unit Tests (Jest Framework)")
+    
+    frontend_test_dir = Path('test/tests/Jest')
+    
+    # Check if frontend test directory exists
+    if not frontend_test_dir.exists():
+        print("❌ Frontend unit test directory not found")
+        return False
+    
+    # Check if npm is installed
+    try:
+        subprocess.run(['npm', '--version'], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ npm not found. Please install Node.js and npm")
+        print("   Visit: https://nodejs.org/")
+        return False
+    
+    # Change to frontend test directory
+    original_dir = os.getcwd()
+    os.chdir(frontend_test_dir)
+    
+    try:
+        # Install dependencies if package.json exists
+        if Path('package.json').exists():
+            print("🔄 Installing frontend test dependencies...")
+            success, _ = run_command(['npm', 'install'], "Install npm packages", capture_output=True)
+            if not success:
+                print("❌ Failed to install npm packages")
+                return False
+        
+        # Determine which tests to run
+        cmd = ['npm', 'test']
+        if args.coverage:
+            cmd = ['npm', 'run', 'test:coverage']
+        elif args.verbose:
+            cmd = ['npm', 'run', 'test:verbose']
+        
+        # Run Jest tests
+        print("🧪 Running frontend unit tests...")
+        result = subprocess.run(cmd, capture_output=False)
+        
+        if result.returncode == 0:
+            print("\n🎉 Frontend unit tests completed successfully!")
+            if args.coverage:
+                print("\n📊 View coverage report:")
+                print("   Open test/tests/Jest/coverage/index.html in browser")
+            return True
+        else:
+            print("\n💥 Frontend unit tests failed!")
+            print("\n🔧 Debugging:")
+            print("   - Run with verbose: npm run test:verbose")
+            print("   - Run in watch mode: npm run test:watch")
+            return False
+    
+    finally:
+        os.chdir(original_dir)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Run tests for Provision-it project with automatic test database setup')
     parser.add_argument('--unit', action='store_true', help='Run unit tests only (test/tests/unit/)')
     parser.add_argument('--integration', action='store_true', help='Run integration tests only (test/tests/integration/)')
     parser.add_argument('--e2e', action='store_true', help='Run E2E tests (test/tests/E2E/)')
+    parser.add_argument('--Jest', action='store_true', help='Run frontend unit tests (test/tests/Jest/)')
     parser.add_argument('--infrastructure', action='store_true', help='Run infrastructure tests (test/tests/infrastructure/)')
     parser.add_argument('--playwright', action='store_true', help='Alias for --e2e')
     parser.add_argument('--coverage', action='store_true', help='Run with coverage report')
@@ -402,8 +463,27 @@ def main():
     
     flask_process = None
     try:
+        # Handle frontend unit tests
+        if args.Jest:
+            print_header("Running Frontend Unit Tests (Jest)")
+            print("JavaScript unit tests for embedded functions in HTML files")
+            
+            success = run_frontend_tests(args)
+            
+            if success:
+                print_header("Frontend Unit Tests Completed Successfully! 🎉")
+                print("\n💡 Next steps:")
+                print("   - View coverage: open test/tests/Jest/coverage/index.html")
+                print("   - Run in watch mode: cd test/tests/Jest && npm run test:watch")
+            else:
+                print_header("Frontend Unit Tests Failed! 💥")
+                print("\n🔧 Troubleshooting:")
+                print("   - Check npm installation: npm --version")
+                print("   - Install dependencies: cd test/tests/Jest && npm install")
+                print("   - Run with verbose: cd test/tests/Jest && npm run test:verbose")
+                sys.exit(1)
         # Handle E2E tests separately
-        if args.e2e or args.playwright:
+        elif args.e2e or args.playwright:
             print_header("Running E2E Tests (Playwright)")
             print("Browser-based end-to-end tests for frontend HTML pages")
             
@@ -467,6 +547,7 @@ def main():
                 print("   - Use --unit to run only unit tests (44 tests)")
                 print("   - Use --integration to run only integration tests (22 tests)")
                 print("   - Use --e2e for E2E tests (13 tests)")
+                print("   - Use --Jest for frontend unit tests")
                 print("   - Use --infrastructure for database setup tests (19 tests)")
                 print("   - Use --coverage to see test coverage")
                 print("   - Use --verbose for detailed output")
