@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive test runner for the Provision-it project.
-Handles unit tests, integration tests, Playwright tests, and Flask app management.
+Handles unit tests, Api tests, and Flask app management.
 """
 
 import sys
@@ -209,12 +209,6 @@ def run_tests(args):
     if args.unit:
         cmd.extend(['test/tests/unit/', '--maxfail=1'])
         test_type = "Unit Tests"
-    elif args.integration:
-        cmd.extend(['test/tests/integration/test_playwright_integration.py', '--maxfail=1'])
-        test_type = "Integration Tests (Playwright)"
-    elif args.playwright:
-        cmd.extend(['test/tests/integration/test_playwright_integration.py', '--maxfail=1'])
-        test_type = "Playwright Integration Tests"
     elif args.database:
         cmd.extend(['test/tests/test_db.py', 'test/tests/test_database_setup.py', '--maxfail=1'])
         test_type = "Database Tests"
@@ -258,8 +252,6 @@ def run_tests(args):
 def main():
     parser = argparse.ArgumentParser(description='Run tests for Provision-it project with automatic test database setup')
     parser.add_argument('--unit', action='store_true', help='Run unit tests only')
-    parser.add_argument('--integration', action='store_true', help='Run integration tests (Playwright) only')
-    parser.add_argument('--playwright', action='store_true', help='Run Playwright tests only (same as --integration)')
     parser.add_argument('--database', action='store_true', help='Run database tests only')
     parser.add_argument('--coverage', action='store_true', help='Run with coverage report')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
@@ -272,7 +264,7 @@ def main():
     args = parser.parse_args()
     
     print_header("Provision-it Comprehensive Test Runner")
-    print("This script handles unit tests, integration tests, Playwright tests, and Flask app management.")
+    print("This script handles unit tests,  Api tests, and Flask app management.")
     
     # Check environment
     if not check_environment():
@@ -284,31 +276,7 @@ def main():
         print("   3. Run tests: python run_tests.py")
         sys.exit(1)
     
-    # Setup Playwright if needed for Playwright/integration tests
-    if args.playwright or args.integration or (not args.unit and not args.database):
-        if not setup_playwright():
-            print("❌ Playwright setup failed. Exiting.")
-            sys.exit(1)
-    
-    # Handle Flask app for Playwright/integration tests
     flask_process = None
-    if args.playwright or args.integration or (not args.unit and not args.database):
-        if not args.skip_flask_check:
-            if not check_flask_app():
-                if args.auto_flask:
-                    flask_process = start_flask_app()
-                    if not flask_process:
-                        print("❌ Failed to start Flask app. Exiting.")
-                        sys.exit(1)
-                else:
-                    print_header("Flask Application Required! ⚠️")
-                    print("\n🔧 Please start your Flask application and try again.")
-                    print("\n💡 Options:")
-                    print("   1. Start Flask app manually: python run.py")
-                    print("   2. Use --auto-flask to start Flask app automatically")
-                    print("   3. Use --skip-flask-check to skip this check")
-                    sys.exit(1)
-    
     try:
         # Setup test database unless skipped
         if not args.skip_db_setup:
