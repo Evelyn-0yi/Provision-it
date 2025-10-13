@@ -25,7 +25,7 @@ class TransactionService:
         Returns:
             Transaction or None if not found
         """
-        return Transaction.query.get(transaction_id)
+        return db.session.get(Transaction, transaction_id)
     
     @staticmethod
     def get_transactions_by_fraction(fraction_id: int) -> List[Transaction]:

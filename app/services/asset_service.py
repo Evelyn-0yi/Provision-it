@@ -69,7 +69,7 @@ class AssetService:
         Returns:
             Asset or None if not found
         """
-        return Asset.query.get(asset_id)
+        return db.session.get(Asset, asset_id)
     
     @staticmethod
     def get_all_assets(page: int = 1, per_page: int = 20) -> List[Asset]:
@@ -101,7 +101,7 @@ class AssetService:
         Returns:
             Updated Asset or None if not found
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return None
         
@@ -125,7 +125,7 @@ class AssetService:
         Returns:
             True if deleted, False if not found
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return False
         
@@ -144,7 +144,7 @@ class AssetService:
         Returns:
             List of Fraction objects
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return []
         
@@ -168,13 +168,13 @@ class AssetService:
             ValueError: If required fields are missing or invalid
         """
         # Validate owner exists
-        owner = User.query.get(owner_id)
+        owner = db.session.get(User, owner_id)
         if not owner:
             raise ValueError("Owner user not found")
         
         # Validate admin user exists and is a manager
         if admin_user_id:
-            admin_user = User.query.get(admin_user_id)
+            admin_user = db.session.get(User, admin_user_id)
             if not admin_user:
                 raise ValueError("Admin user not found")
             if not admin_user.is_manager:
