@@ -195,7 +195,7 @@ def main():
     if not execute_sql_file(database_config, import_file, "Importing initial data"):
         print("\n❌ Data import failed!")
         sys.exit(1)
-    
+
     # Fix sequence synchronization issues
     if not execute_sql_file(database_config, fix_sequences_file, "Fixing sequence synchronization"):
         print("\n❌ Sequence synchronization failed!")
