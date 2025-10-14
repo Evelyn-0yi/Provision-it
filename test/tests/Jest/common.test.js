@@ -26,7 +26,8 @@ describe('browsing.html JavaScript', () => {
 
   test('should have search and filter elements', () => {
     expect(document.getElementById('searchInput')).toBeTruthy();
-    expect(document.getElementById('categoryFilter')).toBeTruthy();
+    expect(document.getElementById('minPrice')).toBeTruthy();
+    expect(document.getElementById('maxPrice')).toBeTruthy();
     expect(document.getElementById('sortBy')).toBeTruthy();
   });
 
