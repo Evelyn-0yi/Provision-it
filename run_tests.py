@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive test runner for the Provision-it project.
-Handles unit tests, integration tests, Playwright tests, and Flask app management.
+Handles unit tests, Api tests, and Flask app management.
 """
 
 import sys
@@ -92,40 +92,71 @@ def check_environment():
     return True
 
 
-def check_flask_app():
+def check_flask_app(port=5001):
     """Check if Flask app is running."""
     try:
-        response = requests.get("http://localhost:5000", timeout=5)
+        response = requests.get(f"http://localhost:{port}/health", timeout=5)
         if response.status_code == 200:
-            print("✅ Flask application is running on http://localhost:5000")
+            print(f"✅ Flask application is running on http://localhost:{port}")
             return True
     except Exception:
         pass
     return False
 
 
-def start_flask_app():
+def start_flask_app(port=5001):
     """Start Flask app in background."""
-    print("🔄 Starting Flask application...")
+    print(f"🔄 Starting Flask application on port {port}...")
+    
+    # Set up environment variables for Flask
+    env = os.environ.copy()
+    env['FLASK_PORT'] = str(port)
+    env['FLASK_HOST'] = '127.0.0.1'
+    env['FLASK_DEBUG'] = 'false'
+    
+    # FORCE use of test database for E2E tests
+    if env.get('TEST_DATABASE_URL'):
+        env['DATABASE_URL'] = env['TEST_DATABASE_URL']
+        print(f"   Using test database: {env['TEST_DATABASE_URL'].split('@')[-1]}")
+    else:
+        print("   ⚠️  Warning: TEST_DATABASE_URL not set, using DATABASE_URL")
+    
+    # Create log file for Flask output
+    log_file = open('flask_test.log', 'w')
     
     # Start Flask app in background
     flask_process = subprocess.Popen(
         [sys.executable, 'run.py'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=env
     )
     
     # Wait for Flask app to start
     for i in range(30):  # Wait up to 30 seconds
         time.sleep(1)
-        if check_flask_app():
-            print("✅ Flask application started successfully")
+        if check_flask_app(port):
+            print(f"✅ Flask application started successfully on port {port}")
             return flask_process
         print(f"   Waiting for Flask app... ({i+1}/30)")
     
+    # Flask failed to start - show the logs
     print("❌ Flask application failed to start")
+    print("\n📋 Flask startup logs:")
+    log_file.close()
+    try:
+        with open('flask_test.log', 'r') as f:
+            logs = f.read()
+            if logs:
+                print(logs)
+            else:
+                print("   No logs available")
+    except Exception as e:
+        print(f"   Could not read logs: {e}")
+    
     flask_process.terminate()
+    flask_process.wait()
     return None
 
 
@@ -136,6 +167,13 @@ def stop_flask_app(flask_process):
         flask_process.terminate()
         flask_process.wait()
         print("✅ Flask application stopped")
+        
+        # Clean up log file
+        try:
+            if Path('flask_test.log').exists():
+                Path('flask_test.log').unlink()
+        except Exception:
+            pass
 
 
 def setup_playwright():
@@ -194,6 +232,83 @@ def setup_test_database():
         return False
 
 
+def run_e2e_tests(args):
+    """Run E2E tests using Playwright."""
+    print_step(3, "Running E2E Tests (Playwright Framework)")
+    
+    e2e_dir = Path('test/tests/E2E')
+    
+    # Check if E2E directory exists
+    if not e2e_dir.exists():
+        print("❌ E2E test directory not found")
+        return False
+    
+    # Check if npm is installed
+    try:
+        subprocess.run(['npm', '--version'], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ npm not found. Please install Node.js and npm")
+        print("   Visit: https://nodejs.org/")
+        return False
+    
+    # Change to E2E directory
+    original_dir = os.getcwd()
+    os.chdir(e2e_dir)
+    
+    try:
+        # Install dependencies if package.json exists
+        if Path('package.json').exists():
+            print("🔄 Installing E2E test dependencies...")
+            success, _ = run_command(['npm', 'install'], "Install npm packages", capture_output=True)
+            if not success:
+                print("❌ Failed to install npm packages")
+                return False
+            
+            # Install Playwright browsers if needed
+            print("🔄 Ensuring browsers are installed...")
+            subprocess.run(['npx', 'playwright', 'install'], 
+                         capture_output=True, check=False)
+        
+        # Determine which tests to run
+        if args.verbose:
+            cmd = ['npx', 'playwright', 'test', '--reporter=list']
+        else:
+            cmd = ['npx', 'playwright', 'test']
+        
+        # Add specific test file if specified
+        if hasattr(args, 'test_file') and args.test_file:
+            cmd.append(args.test_file)
+        
+        # Set up environment for Playwright
+        # E2E tests need the HTML file server (port 8080) AND Flask API (port 5001)
+        # Don't skip webServer for E2E tests
+        e2e_env = os.environ.copy()
+        # e2e_env['SKIP_WEBSERVER'] = '1'  # Don't set this - E2E needs HTML files!
+        
+        # E2E tests use port 8080 for HTML files (served by webServer in config)
+        # Flask API runs on port 5001 (started by --auto-flask)
+        
+        # Run E2E tests
+        print("🎭 Running E2E tests...")
+        result = subprocess.run(cmd, capture_output=False, env=e2e_env)
+        
+        if result.returncode == 0:
+            print("\n🎉 E2E tests completed successfully!")
+            print("\n📊 View detailed report:")
+            print("   npx playwright show-report")
+            return True
+        else:
+            print("\n💥 E2E tests failed!")
+            print("\n🔧 Debugging:")
+            print("   - View report: npx playwright show-report")
+            print("   - Run with UI: npx playwright test --ui")
+            print("   - Debug mode: npx playwright test --debug")
+            return False
+    
+    finally:
+        os.chdir(original_dir)
+
+
 def run_tests(args):
     """Run the actual tests."""
     print_step(3, "Running tests")
@@ -210,17 +325,15 @@ def run_tests(args):
         cmd.extend(['test/tests/unit/', '--maxfail=1'])
         test_type = "Unit Tests"
     elif args.integration:
-        cmd.extend(['test/tests/integration/test_playwright_integration.py', '--maxfail=1'])
-        test_type = "Integration Tests (Playwright)"
-    elif args.playwright:
-        cmd.extend(['test/tests/integration/test_playwright_integration.py', '--maxfail=1'])
-        test_type = "Playwright Integration Tests"
-    elif args.database:
-        cmd.extend(['test/tests/test_db.py', 'test/tests/test_database_setup.py', '--maxfail=1'])
-        test_type = "Database Tests"
+        cmd.extend(['test/tests/integration/', '--maxfail=1'])
+        test_type = "Integration Tests"
+    elif args.infrastructure:
+        cmd.extend(['test/tests/infrastructure/', '--maxfail=1'])
+        test_type = "Infrastructure Tests"
     else:
-        cmd.extend(['test/tests/', '--maxfail=1'])
-        test_type = "All Tests"
+        # Run unit and integration tests by default (exclude E2E and infrastructure)
+        cmd.extend(['test/tests/unit/', 'test/tests/integration/', '--maxfail=1'])
+        test_type = "All Backend Tests (Unit + Integration)"
     
     # Add coverage if requested
     if args.coverage and not args.fast:
@@ -233,10 +346,9 @@ def run_tests(args):
         ])
     
     # Add other options
-    cmd.extend([
-        '--disable-warnings',
-        '--tb=short'
-    ])
+    if not args.show_warnings:
+        cmd.append('--disable-warnings')
+    cmd.append('--tb=short')
     
     # Run the tests
     success, output = run_command(cmd, f"Running {test_type}")
@@ -255,24 +367,89 @@ def run_tests(args):
     return success
 
 
+def run_frontend_tests(args):
+    """Run frontend unit tests using Jest."""
+    print_step(3, "Running Frontend Unit Tests (Jest Framework)")
+    
+    frontend_test_dir = Path('test/tests/Jest')
+    
+    # Check if frontend test directory exists
+    if not frontend_test_dir.exists():
+        print("❌ Frontend unit test directory not found")
+        return False
+    
+    # Check if npm is installed
+    try:
+        subprocess.run(['npm', '--version'], check=True, capture_output=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("❌ npm not found. Please install Node.js and npm")
+        print("   Visit: https://nodejs.org/")
+        return False
+    
+    # Change to frontend test directory
+    original_dir = os.getcwd()
+    os.chdir(frontend_test_dir)
+    
+    try:
+        # Install dependencies if package.json exists
+        if Path('package.json').exists():
+            print("🔄 Installing frontend test dependencies...")
+            success, _ = run_command(['npm', 'install'], "Install npm packages", capture_output=True)
+            if not success:
+                print("❌ Failed to install npm packages")
+                return False
+        
+        # Determine which tests to run
+        cmd = ['npm', 'test']
+        if args.coverage:
+            cmd = ['npm', 'run', 'test:coverage']
+        elif args.verbose:
+            cmd = ['npm', 'run', 'test:verbose']
+        
+        # Run Jest tests
+        print("🧪 Running frontend unit tests...")
+        result = subprocess.run(cmd, capture_output=False)
+        
+        if result.returncode == 0:
+            print("\n🎉 Frontend unit tests completed successfully!")
+            if args.coverage:
+                print("\n📊 View coverage report:")
+                print("   Open test/tests/Jest/coverage/index.html in browser")
+            return True
+        else:
+            print("\n💥 Frontend unit tests failed!")
+            print("\n🔧 Debugging:")
+            print("   - Run with verbose: npm run test:verbose")
+            print("   - Run in watch mode: npm run test:watch")
+            return False
+    
+    finally:
+        os.chdir(original_dir)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Run tests for Provision-it project with automatic test database setup')
-    parser.add_argument('--unit', action='store_true', help='Run unit tests only')
-    parser.add_argument('--integration', action='store_true', help='Run integration tests (Playwright) only')
-    parser.add_argument('--playwright', action='store_true', help='Run Playwright tests only (same as --integration)')
-    parser.add_argument('--database', action='store_true', help='Run database tests only')
+    parser.add_argument('--unit', action='store_true', help='Run unit tests only (test/tests/unit/)')
+    parser.add_argument('--integration', action='store_true', help='Run integration tests only (test/tests/integration/)')
+    parser.add_argument('--e2e', action='store_true', help='Run E2E tests (test/tests/E2E/)')
+    parser.add_argument('--Jest', action='store_true', help='Run frontend unit tests (test/tests/Jest/)')
+    parser.add_argument('--infrastructure', action='store_true', help='Run infrastructure tests (test/tests/infrastructure/)')
+    parser.add_argument('--playwright', action='store_true', help='Alias for --e2e')
     parser.add_argument('--coverage', action='store_true', help='Run with coverage report')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
     parser.add_argument('--fast', action='store_true', help='Run tests quickly (no coverage)')
     parser.add_argument('--skip-db-setup', action='store_true', help='Skip test database setup')
     parser.add_argument('--reset-db', action='store_true', help='Reset test database before running tests')
-    parser.add_argument('--auto-flask', action='store_true', help='Automatically start/stop Flask app for Playwright tests')
+    parser.add_argument('--auto-flask', action='store_true', help='Automatically start/stop Flask app for E2E tests')
     parser.add_argument('--skip-flask-check', action='store_true', help='Skip Flask app availability check')
+    parser.add_argument('--test-file', type=str, help='Specific E2E test file to run')
+    parser.add_argument('--flask-port', type=int, default=5001, help='Port for Flask app (default: 5001)')
+    parser.add_argument('--show-warnings', action='store_true', help='Show test warnings (hidden by default)')
     
     args = parser.parse_args()
     
     print_header("Provision-it Comprehensive Test Runner")
-    print("This script handles unit tests, integration tests, Playwright tests, and Flask app management.")
+    print("This script handles Unit, Integration, and E2E tests with automatic setup.")
     
     # Check environment
     if not check_environment():
@@ -284,75 +461,103 @@ def main():
         print("   3. Run tests: python run_tests.py")
         sys.exit(1)
     
-    # Setup Playwright if needed for Playwright/integration tests
-    if args.playwright or args.integration or (not args.unit and not args.database):
-        if not setup_playwright():
-            print("❌ Playwright setup failed. Exiting.")
-            sys.exit(1)
-    
-    # Handle Flask app for Playwright/integration tests
     flask_process = None
-    if args.playwright or args.integration or (not args.unit and not args.database):
-        if not args.skip_flask_check:
-            if not check_flask_app():
-                if args.auto_flask:
-                    flask_process = start_flask_app()
+    try:
+        # Handle frontend unit tests
+        if args.Jest:
+            print_header("Running Frontend Unit Tests (Jest)")
+            print("JavaScript unit tests for embedded functions in HTML files")
+            
+            success = run_frontend_tests(args)
+            
+            if success:
+                print_header("Frontend Unit Tests Completed Successfully! 🎉")
+                print("\n💡 Next steps:")
+                print("   - View coverage: open test/tests/Jest/coverage/index.html")
+                print("   - Run in watch mode: cd test/tests/Jest && npm run test:watch")
+            else:
+                print_header("Frontend Unit Tests Failed! 💥")
+                print("\n🔧 Troubleshooting:")
+                print("   - Check npm installation: npm --version")
+                print("   - Install dependencies: cd test/tests/Jest && npm install")
+                print("   - Run with verbose: cd test/tests/Jest && npm run test:verbose")
+                sys.exit(1)
+        # Handle E2E tests separately
+        elif args.e2e or args.playwright:
+            print_header("Running E2E Tests (Playwright)")
+            print("Browser-based end-to-end tests for frontend HTML pages")
+            
+            # Start Flask app if --auto-flask is specified
+            if args.auto_flask:
+                if not check_flask_app(args.flask_port):
+                    flask_process = start_flask_app(args.flask_port)
                     if not flask_process:
                         print("❌ Failed to start Flask app. Exiting.")
                         sys.exit(1)
                 else:
-                    print_header("Flask Application Required! ⚠️")
-                    print("\n🔧 Please start your Flask application and try again.")
-                    print("\n💡 Options:")
-                    print("   1. Start Flask app manually: python run.py")
-                    print("   2. Use --auto-flask to start Flask app automatically")
-                    print("   3. Use --skip-flask-check to skip this check")
-                    sys.exit(1)
-    
-    try:
-        # Setup test database unless skipped
-        if not args.skip_db_setup:
-            if args.reset_db:
-                print_step(2, "Resetting test database")
-                try:
-                    from test_database.setup import reset_test_database
-                    success = reset_test_database()
-                    if not success:
-                        print("❌ Test database reset failed")
-                        sys.exit(1)
-                except ImportError:
-                    script_path = Path('test/test_database/manage_test_db.py')
-                    if script_path.exists():
-                        success, _ = run_command(['python', str(script_path), 'reset'], 
-                                               "Manual test database reset", capture_output=True)
-                        if not success:
-                            sys.exit(1)
+                    print(f"✅ Flask app already running on port {args.flask_port}")
             
-            success = setup_test_database()
-            if not success:
-                print("❌ Test database setup failed. Exiting.")
+            success = run_e2e_tests(args)
+            
+            if success:
+                print_header("E2E Tests Completed Successfully! 🎉")
+                print("\n💡 Next steps:")
+                print("   - View detailed report: cd test/tests/E2E && npx playwright show-report")
+                print("   - Run with UI: cd test/tests/E2E && npm run test:ui")
+                print("   - Debug tests: cd test/tests/E2E && npm run test:debug")
+            else:
+                print_header("E2E Tests Failed! 💥")
+                print("\n🔧 Troubleshooting:")
+                print("   - Check if Flask app is running (use --auto-flask)")
+                print("   - View report: cd test/tests/E2E && npx playwright show-report")
+                print("   - Run with UI: cd test/tests/E2E && npm run test:ui")
                 sys.exit(1)
         else:
-            print_step(2, "Skipping test database setup (--skip-db-setup)")
-        
-        # Run tests
-        success = run_tests(args)
-        
-        if success:
-            print_header("Test Run Completed Successfully! 🎉")
-            print("\n💡 Tips:")
-            print("   - Use --coverage to see test coverage")
-            print("   - Use --verbose for detailed output")
-            print("   - Use --reset-db to reset test database")
-            print("   - Use --auto-flask for Playwright tests")
-            print("   - Use --skip-db-setup to skip database setup")
-        else:
-            print_header("Test Run Failed! 💥")
-            print("\n🔧 Troubleshooting:")
-            print("   - Check test database setup: python test/test_database/manage_test_db.py info")
-            print("   - Reset test database: python test/test_database/manage_test_db.py reset")
-            print("   - Run tests with --verbose for more details")
-            sys.exit(1)
+            # Setup test database unless skipped (not needed for Playwright)
+            if not args.skip_db_setup:
+                if args.reset_db:
+                    print_step(2, "Resetting test database")
+                    try:
+                        from test_database.setup import reset_test_database
+                        success = reset_test_database()
+                        if not success:
+                            print("❌ Test database reset failed")
+                            sys.exit(1)
+                    except ImportError:
+                        script_path = Path('test/test_database/manage_test_db.py')
+                        if script_path.exists():
+                            success, _ = run_command(['python', str(script_path), 'reset'], 
+                                                   "Manual test database reset", capture_output=True)
+                            if not success:
+                                sys.exit(1)
+                
+                success = setup_test_database()
+                if not success:
+                    print("❌ Test database setup failed. Exiting.")
+                    sys.exit(1)
+            else:
+                print_step(2, "Skipping test database setup (--skip-db-setup)")
+            
+            # Run tests
+            success = run_tests(args)
+            
+            if success:
+                print_header("Test Run Completed Successfully! 🎉")
+                print("\n💡 Tips:")
+                print("   - Use --unit to run only unit tests (44 tests)")
+                print("   - Use --integration to run only integration tests (22 tests)")
+                print("   - Use --e2e for E2E tests (13 tests)")
+                print("   - Use --Jest for frontend unit tests")
+                print("   - Use --infrastructure for database setup tests (19 tests)")
+                print("   - Use --coverage to see test coverage")
+                print("   - Use --verbose for detailed output")
+            else:
+                print_header("Test Run Failed! 💥")
+                print("\n🔧 Troubleshooting:")
+                print("   - Check test database setup: python test/test_database/manage_test_db.py info")
+                print("   - Reset test database: python test/test_database/manage_test_db.py reset")
+                print("   - Run tests with --verbose for more details")
+                sys.exit(1)
     
     finally:
         # Clean up Flask app if we started it

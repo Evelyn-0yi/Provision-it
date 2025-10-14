@@ -59,7 +59,7 @@ class AssetValueService:
             PermissionError: If user is not a manager
         """
         # must be an administrator
-        user = User.query.get(adjusted_by)
+        user = db.session.get(User, adjusted_by)
         if not user or not user.is_manager:
             raise PermissionError("Only manager can adjust asset values.")
 
@@ -74,7 +74,7 @@ class AssetValueService:
         db.session.add(item)
 
         # （可选）同步更新主表当前值，便于列表页快速显示
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if asset is not None:
             # 你们的 Asset.total_value 字段类型是 String，所以转成字符串存
             asset.total_value = str(value)

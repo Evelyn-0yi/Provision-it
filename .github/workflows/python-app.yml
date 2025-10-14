@@ -40,14 +40,25 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install Node.js dependencies for E2E tests
+        run: |
+          cd test/tests/E2E
+          npm install
+
       - name: Install Playwright browsers
         run: |
-          playwright install chromium
+          cd test/tests/E2E
+          npx playwright install chromium --with-deps
 
       - name: Set up test database
         run: |
@@ -59,8 +70,32 @@ jobs:
 
       - name: Run database tests
         run: |
-          pytest test/tests/test_db.py test/tests/test_database_setup.py -v --tb=short --maxfail=3
+          pytest test/tests/infrastructure/test_db.py test/tests/infrastructure/test_database_setup.py -v --tb=short --maxfail=3
 
-      - name: Run API tests
+      - name: Run integration tests
         run: |
-          pytest test/tests/test_user_api.py -v --tb=short --maxfail=3
+          pytest test/tests/integration/ -v --tb=short --maxfail=3
+
+      - name: Install frontend test dependencies
+        run: |
+          cd test/tests/Jest
+          npm install
+
+      - name: Run frontend unit tests (Jest)
+        run: |
+          cd test/tests/Jest
+          npm test
+
+      - name: Start Flask server for E2E tests
+        env:
+          FLASK_HOST: 0.0.0.0
+          FLASK_PORT: 5001
+        run: |
+          python run.py &
+          sleep 10
+          curl -f http://localhost:5001/health || exit 1
+
+      - name: Run E2E tests
+        run: |
+          cd test/tests/E2E
+          npm test

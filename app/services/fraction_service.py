@@ -31,7 +31,7 @@ class FractionService:
                 raise ValueError(f"Missing required field: {field}")
         
         # Validate asset exists
-        asset = Asset.query.get(fraction_data['asset_id'])
+        asset = db.session.get(Asset, fraction_data['asset_id'])
         if not asset:
             raise ValueError("Asset not found")
         
@@ -65,7 +65,7 @@ class FractionService:
         Returns:
             Fraction or None if not found
         """
-        return Fraction.query.get(fraction_id)
+        return db.session.get(Fraction, fraction_id)
     
     @staticmethod
     def get_fractions_by_owner(owner_id: int) -> List[Fraction]:
@@ -105,7 +105,7 @@ class FractionService:
         Returns:
             Updated Fraction or None if not found
         """
-        fraction = Fraction.query.get(fraction_id)
+        fraction = db.session.get(Fraction, fraction_id)
         if not fraction:
             return None
         
@@ -129,7 +129,7 @@ class FractionService:
         Returns:
             True if deleted, False if not found
         """
-        fraction = Fraction.query.get(fraction_id)
+        fraction = db.session.get(Fraction, fraction_id)
         if not fraction:
             return False
         

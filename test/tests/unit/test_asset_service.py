@@ -147,37 +147,44 @@ class TestAssetService:
             mock_admin.user_id = admin_user_id
             mock_admin.is_manager = True
             
-            with patch('app.services.asset_service.User') as mock_user_class:
-                mock_user_class.query.get.side_effect = lambda uid: mock_owner if uid == owner_id else mock_admin
-                
-                # Mock Asset creation
-                mock_asset = Mock(spec=Asset)
-                mock_asset.asset_id = 1
-                mock_asset.total_unit = 1000
-                
-                with patch('app.services.asset_service.AssetService.create_asset', return_value=mock_asset):
-                    with patch('app.services.asset_service.Fraction') as mock_fraction_class:
-                        with patch('app.services.asset_service.AssetValueHistory') as mock_history_class:
-                            mock_fraction = Mock()
-                            mock_history = Mock()
-                            
-                            mock_fraction_class.return_value = mock_fraction
-                            mock_history_class.return_value = mock_history
-                            
-                            result = AssetService.create_asset_with_initial_fraction(
-                                asset_data, owner_id, admin_user_id
-                            )
-                            
-                            assert 'asset' in result
-                            assert 'fraction' in result
-                            assert 'value_history' in result
-                            assert result['asset'] == mock_asset
-                            assert result['fraction'] == mock_fraction
-                            assert result['value_history'] == mock_history
-                            
-                            # Verify database operations
-                            assert mock_db.session.add.call_count == 2  # fraction + history
-                            mock_db.session.commit.assert_called_once()
+            # Mock db.session.get() to return appropriate user
+            def session_get_side_effect(model, uid):
+                if model == User:
+                    if uid == owner_id:
+                        return mock_owner
+                    elif uid == admin_user_id:
+                        return mock_admin
+                return None
+            mock_db.session.get.side_effect = session_get_side_effect
+            
+            # Mock Asset creation
+            mock_asset = Mock(spec=Asset)
+            mock_asset.asset_id = 1
+            mock_asset.total_unit = 1000
+            
+            with patch('app.services.asset_service.AssetService.create_asset', return_value=mock_asset):
+                with patch('app.services.asset_service.Fraction') as mock_fraction_class:
+                    with patch('app.services.asset_service.AssetValueHistory') as mock_history_class:
+                        mock_fraction = Mock()
+                        mock_history = Mock()
+                        
+                        mock_fraction_class.return_value = mock_fraction
+                        mock_history_class.return_value = mock_history
+                        
+                        result = AssetService.create_asset_with_initial_fraction(
+                            asset_data, owner_id, admin_user_id
+                        )
+                        
+                        assert 'asset' in result
+                        assert 'fraction' in result
+                        assert 'value_history' in result
+                        assert result['asset'] == mock_asset
+                        assert result['fraction'] == mock_fraction
+                        assert result['value_history'] == mock_history
+                        
+                        # Verify database operations
+                        assert mock_db.session.add.call_count == 2  # fraction + history
+                        mock_db.session.commit.assert_called_once()
     
     def test_create_asset_with_initial_fraction_owner_not_found(self):
         """Test asset creation with non-existent owner."""
@@ -191,8 +198,8 @@ class TestAssetService:
         owner_id = 999  # Non-existent
         admin_user_id = 2
         
-        with patch('app.services.asset_service.User') as mock_user_class:
-            mock_user_class.query.get.return_value = None
+        with patch('app.services.asset_service.db.session.get') as mock_session_get:
+            mock_session_get.return_value = None
             
             with pytest.raises(ValueError, match="Owner user not found"):
                 AssetService.create_asset_with_initial_fraction(asset_data, owner_id, admin_user_id)
@@ -209,9 +216,14 @@ class TestAssetService:
         owner_id = 1
         admin_user_id = 999  # Non-existent
         
-        with patch('app.services.asset_service.User') as mock_user_class:
+        with patch('app.services.asset_service.db.session.get') as mock_session_get:
             mock_owner = Mock(spec=User)
-            mock_user_class.query.get.side_effect = lambda uid: mock_owner if uid == owner_id else None
+            # db.session.get(Model, id) - return mock_owner for User with owner_id, None for admin
+            def session_get_side_effect(model, uid):
+                if model == User and uid == owner_id:
+                    return mock_owner
+                return None
+            mock_session_get.side_effect = session_get_side_effect
             
             with pytest.raises(ValueError, match="Admin user not found"):
                 AssetService.create_asset_with_initial_fraction(asset_data, owner_id, admin_user_id)
@@ -228,12 +240,19 @@ class TestAssetService:
         owner_id = 1
         admin_user_id = 2
         
-        with patch('app.services.asset_service.User') as mock_user_class:
+        with patch('app.services.asset_service.db.session.get') as mock_session_get:
             mock_owner = Mock(spec=User)
             mock_admin = Mock(spec=User)
             mock_admin.is_manager = False  # Not a manager
             
-            mock_user_class.query.get.side_effect = lambda uid: mock_owner if uid == owner_id else mock_admin
+            def session_get_side_effect(model, uid):
+                if model == User:
+                    if uid == owner_id:
+                        return mock_owner
+                    elif uid == admin_user_id:
+                        return mock_admin
+                return None
+            mock_session_get.side_effect = session_get_side_effect
             
             with pytest.raises(PermissionError, match="Only managers can create assets"):
                 AssetService.create_asset_with_initial_fraction(asset_data, owner_id, admin_user_id)
@@ -256,48 +275,55 @@ class TestAssetService:
             mock_admin = Mock(spec=User)
             mock_admin.is_manager = True
             
-            with patch('app.services.asset_service.User') as mock_user_class:
-                mock_user_class.query.get.side_effect = lambda uid: mock_owner if uid == owner_id else mock_admin
+            # Mock db.session.get() to return appropriate user
+            def session_get_side_effect(model, uid):
+                if model == User:
+                    if uid == owner_id:
+                        return mock_owner
+                    elif uid == admin_user_id:
+                        return mock_admin
+                return None
+            mock_db.session.get.side_effect = session_get_side_effect
+            
+            # Mock Asset creation
+            mock_asset = Mock(spec=Asset)
+            mock_asset.asset_id = 1
+            mock_asset.total_unit = 1000
+            
+            with patch('app.services.asset_service.AssetService.create_asset', return_value=mock_asset):
+                # Simulate failure during fraction/history creation
+                mock_db.session.add.side_effect = Exception("Database error")
                 
-                # Mock Asset creation
-                mock_asset = Mock(spec=Asset)
-                mock_asset.asset_id = 1
-                mock_asset.total_unit = 1000
+                with pytest.raises(ValueError, match="Failed to create initial fraction or value history"):
+                    AssetService.create_asset_with_initial_fraction(asset_data, owner_id, admin_user_id)
                 
-                with patch('app.services.asset_service.AssetService.create_asset', return_value=mock_asset):
-                    # Simulate failure during fraction/history creation
-                    mock_db.session.add.side_effect = Exception("Database error")
-                    
-                    with pytest.raises(ValueError, match="Failed to create initial fraction or value history"):
-                        AssetService.create_asset_with_initial_fraction(asset_data, owner_id, admin_user_id)
-                    
-                    # Verify rollback was called
-                    mock_db.session.rollback.assert_called_once()
+                # Verify rollback was called
+                mock_db.session.rollback.assert_called_once()
     
     def test_get_asset_by_id_success(self):
         """Test successful asset retrieval by ID."""
         asset_id = 1
         mock_asset = Mock(spec=Asset)
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = mock_asset
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = mock_asset
             
             result = AssetService.get_asset_by_id(asset_id)
             
             assert result == mock_asset
-            mock_asset_class.query.get.assert_called_once_with(asset_id)
+            mock_db.session.get.assert_called_once_with(Asset, asset_id)
     
     def test_get_asset_by_id_not_found(self):
         """Test asset retrieval with non-existent ID."""
         asset_id = 999
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = None
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = None
             
             result = AssetService.get_asset_by_id(asset_id)
             
             assert result is None
-            mock_asset_class.query.get.assert_called_once_with(asset_id)
+            mock_db.session.get.assert_called_once_with(Asset, asset_id)
     
     def test_get_all_assets_with_pagination(self):
         """Test asset retrieval with pagination."""
@@ -323,23 +349,22 @@ class TestAssetService:
         asset_data = {'asset_name': 'Updated Asset'}
         mock_asset = Mock(spec=Asset)
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = mock_asset
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = mock_asset
             
-            with patch('app.services.asset_service.db') as mock_db:
-                result = AssetService.update_asset(asset_id, asset_data)
-                
-                assert result == mock_asset
-                assert mock_asset.asset_name == 'Updated Asset'
-                mock_db.session.commit.assert_called_once()
+            result = AssetService.update_asset(asset_id, asset_data)
+            
+            assert result == mock_asset
+            assert mock_asset.asset_name == 'Updated Asset'
+            mock_db.session.commit.assert_called_once()
     
     def test_update_asset_not_found(self):
         """Test asset update with non-existent ID."""
         asset_id = 999
         asset_data = {'asset_name': 'Updated Asset'}
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = None
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = None
             
             result = AssetService.update_asset(asset_id, asset_data)
             
@@ -350,22 +375,21 @@ class TestAssetService:
         asset_id = 1
         mock_asset = Mock(spec=Asset)
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = mock_asset
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = mock_asset
             
-            with patch('app.services.asset_service.db') as mock_db:
-                result = AssetService.delete_asset(asset_id)
-                
-                assert result is True
-                mock_db.session.delete.assert_called_once_with(mock_asset)
-                mock_db.session.commit.assert_called_once()
+            result = AssetService.delete_asset(asset_id)
+            
+            assert result is True
+            mock_db.session.delete.assert_called_once_with(mock_asset)
+            mock_db.session.commit.assert_called_once()
     
     def test_delete_asset_not_found(self):
         """Test asset deletion with non-existent ID."""
         asset_id = 999
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = None
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = None
             
             result = AssetService.delete_asset(asset_id)
             
@@ -378,8 +402,8 @@ class TestAssetService:
         mock_asset = Mock(spec=Asset)
         mock_asset.fractions = mock_fractions
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = mock_asset
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = mock_asset
             
             result = AssetService.get_asset_fractions(asset_id)
             
@@ -389,8 +413,8 @@ class TestAssetService:
         """Test fraction retrieval for non-existent asset."""
         asset_id = 999
         
-        with patch('app.services.asset_service.Asset') as mock_asset_class:
-            mock_asset_class.query.get.return_value = None
+        with patch('app.services.asset_service.db') as mock_db:
+            mock_db.session.get.return_value = None
             
             result = AssetService.get_asset_fractions(asset_id)
             

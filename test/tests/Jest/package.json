@@ -1,0 +1,25 @@
+{
+  "name": "frontend-unit-tests",
+  "version": "1.0.0",
+  "description": "Unit tests for embedded JavaScript in frontend HTML files - 100% passing",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "keywords": [
+    "jest",
+    "unit-test",
+    "frontend",
+    "javascript",
+    "jsdom"
+  ],
+  "author": "Provision-it Team",
+  "license": "ISC"
+}
