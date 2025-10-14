@@ -10,7 +10,8 @@ const path = require('path');
  * @returns {object} - { html, script }
  */
 function loadHTMLFile(filename) {
-  const frontendPath = path.join(__dirname, '../../../frontend', filename);
+  // Use absolute path to avoid path resolution issues
+  const frontendPath = path.resolve(__dirname, '../../../frontend', filename);
   const html = fs.readFileSync(frontendPath, 'utf-8');
   
   // Extract script content from HTML
@@ -39,37 +40,54 @@ function executeScript(code) {
   const scriptWithExports = `
     ${code}
     // Expose functions to window if they exist
-    if (typeof el !== 'undefined') window.el = el;
-    if (typeof setMsg !== 'undefined') window.setMsg = setMsg;
-    if (typeof login !== 'undefined') window.login = login;
-    if (typeof logout !== 'undefined') window.logout = logout;
-    if (typeof signup !== 'undefined') window.signup = signup;
-    if (typeof validateForm !== 'undefined') window.validateForm = validateForm;
-    if (typeof backToLogin !== 'undefined') window.backToLogin = backToLogin;
-    if (typeof fetchDashboardData !== 'undefined') window.fetchDashboardData = fetchDashboardData;
-    if (typeof updateDashboard !== 'undefined') window.updateDashboard = updateDashboard;
-    if (typeof updateRecentActivity !== 'undefined') window.updateRecentActivity = updateRecentActivity;
-    if (typeof updateTopAssets !== 'undefined') window.updateTopAssets = updateTopAssets;
-    if (typeof refreshData !== 'undefined') window.refreshData = refreshData;
-    if (typeof processPortfolioData !== 'undefined') window.processPortfolioData = processPortfolioData;
-    if (typeof getAssetCategory !== 'undefined') window.getAssetCategory = getAssetCategory;
-    if (typeof sortHoldings !== 'undefined') window.sortHoldings = sortHoldings;
-    if (typeof filterHoldings !== 'undefined') window.filterHoldings = filterHoldings;
-    if (typeof exportPortfolio !== 'undefined') window.exportPortfolio = exportPortfolio;
-    if (typeof fetchPortfolioData !== 'undefined') window.fetchPortfolioData = fetchPortfolioData;
-    if (typeof fetchAssets !== 'undefined') window.fetchAssets = fetchAssets;
-    if (typeof clearFilters !== 'undefined') window.clearFilters = clearFilters;
-    if (typeof toggleView !== 'undefined') window.toggleView = toggleView;
-    if (typeof isGridView !== 'undefined') window.isGridView = isGridView;
-    if (typeof switchTab !== 'undefined') window.switchTab = switchTab;
-    if (typeof formatDate !== 'undefined') window.formatDate = formatDate;
-    if (typeof showMessage !== 'undefined') window.showMessage = showMessage;
-    if (typeof closeCreateOfferModal !== 'undefined') window.closeCreateOfferModal = closeCreateOfferModal;
-    if (typeof openCreateOfferModal !== 'undefined') window.openCreateOfferModal = openCreateOfferModal;
-    if (typeof toggleEditMode !== 'undefined') window.toggleEditMode = toggleEditMode;
-    if (typeof cancelEdit !== 'undefined') window.cancelEdit = cancelEdit;
-    if (typeof getCurrentUserId !== 'undefined') window.getCurrentUserId = getCurrentUserId;
-    if (typeof updateDeleteButtonState !== 'undefined') window.updateDeleteButtonState = updateDeleteButtonState;
+        // Login functions
+        if (typeof el !== 'undefined') window.el = el;
+        if (typeof setMsg !== 'undefined') window.setMsg = setMsg;
+        if (typeof login !== 'undefined') window.login = login;
+        if (typeof logout !== 'undefined') window.logout = logout;
+        
+        // Signup functions
+        if (typeof signup !== 'undefined') window.signup = signup;
+        if (typeof validateForm !== 'undefined') window.validateForm = validateForm;
+        if (typeof backToLogin !== 'undefined') window.backToLogin = backToLogin;
+        
+        // Portfolio functions
+        if (typeof processPortfolioData !== 'undefined') window.processPortfolioData = processPortfolioData;
+        if (typeof getAssetCategory !== 'undefined') window.getAssetCategory = getAssetCategory;
+        if (typeof sortHoldings !== 'undefined') window.sortHoldings = sortHoldings;
+        if (typeof filterHoldings !== 'undefined') window.filterHoldings = filterHoldings;
+        if (typeof exportPortfolio !== 'undefined') window.exportPortfolio = exportPortfolio;
+        if (typeof fetchPortfolioData !== 'undefined') window.fetchPortfolioData = fetchPortfolioData;
+        
+        // Browsing functions
+        if (typeof fetchAssets !== 'undefined') window.fetchAssets = fetchAssets;
+        if (typeof clearFilters !== 'undefined') window.clearFilters = clearFilters;
+        if (typeof toggleView !== 'undefined') window.toggleView = toggleView;
+        if (typeof searchAssets !== 'undefined') window.searchAssets = searchAssets;
+        if (typeof filterAssets !== 'undefined') window.filterAssets = filterAssets;
+        if (typeof sortAssets !== 'undefined') window.sortAssets = sortAssets;
+        
+        // Trading functions
+        if (typeof switchTab !== 'undefined') window.switchTab = switchTab;
+        if (typeof formatDate !== 'undefined') window.formatDate = formatDate;
+        if (typeof showMessage !== 'undefined') window.showMessage = showMessage;
+        if (typeof loadAssets !== 'undefined') window.loadAssets = loadAssets;
+        if (typeof loadOffers !== 'undefined') window.loadOffers = loadOffers;
+        if (typeof refreshOffers !== 'undefined') window.refreshOffers = refreshOffers;
+        if (typeof openCreateOfferModal !== 'undefined') window.openCreateOfferModal = openCreateOfferModal;
+        if (typeof closeCreateOfferModal !== 'undefined') window.closeCreateOfferModal = closeCreateOfferModal;
+        
+        // Profile functions
+        if (typeof toggleEditMode !== 'undefined') window.toggleEditMode = toggleEditMode;
+        if (typeof cancelEdit !== 'undefined') window.cancelEdit = cancelEdit;
+        if (typeof getCurrentUserId !== 'undefined') window.getCurrentUserId = getCurrentUserId;
+        if (typeof updateDeleteButtonState !== 'undefined') window.updateDeleteButtonState = updateDeleteButtonState;
+        if (typeof loadProfile !== 'undefined') window.loadProfile = loadProfile;
+        if (typeof updateProfile !== 'undefined') window.updateProfile = updateProfile;
+        
+        // Common functions
+        if (typeof refreshData !== 'undefined') window.refreshData = refreshData;
+        if (typeof showError !== 'undefined') window.showError = showError;
     // Expose portfolioData and make it writable
     if (typeof portfolioData !== 'undefined') {
       window.portfolioData = portfolioData;
