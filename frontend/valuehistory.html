@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Asset Value History - Asset Trading Platform</title>
+  <link rel="icon" type="image/png" href="/frontend/Icons/pvit90.png">
   <link rel="stylesheet" href="common.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -663,11 +664,17 @@
       }, 3000);
     }
 
-    function logout() {
-      sessionStorage.clear();
-      location.href = 'login.html';
+    // logout() provided by logout.js shared script
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (e) {
+        // swallow network errors; proceed to clear session
+      } finally {
+        try { sessionStorage.clear(); } catch (_) {}
+        location.href = 'login.html';
+      }
     }
-
     // Load data on page load
     fetchAssets();
   </script>

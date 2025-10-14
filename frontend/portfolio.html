@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>My Assets - Asset Trading Platform</title>
+  <link rel="icon" type="image/png" href="/frontend/Icons/pvit90.png">
   <link rel="stylesheet" href="common.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -104,7 +105,7 @@
     <!-- Asset Detail Modal -->
     <div id="assetDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 30px; border-radius: 14px; width: 600px; max-width: 90vw; max-height: 80vh; overflow-y: auto;">
-        <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div class="row modal-header-sticky">
           <h3 id="modalAssetName">Asset Details</h3>
           <button onclick="hideAssetDetailModal()" class="small">Close</button>
         </div>
@@ -552,16 +553,18 @@
         document.body.removeChild(msg);
       }, 3000);
     }
-
     async function logout() {
       try {
-        await fetch(`${API}/auth/logout`, { method: 'POST' });
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
       } catch (e) {
-        console.error('Logout error:', e);
+        // swallow network errors; proceed to clear session
+      } finally {
+        try { sessionStorage.clear(); } catch (_) {}
+        location.href = 'login.html';
       }
-      sessionStorage.clear();
-      location.href = 'login.html';
     }
+
+
 
     // Load data on page load
     fetchPortfolioData();
