@@ -36,7 +36,7 @@ class OfferService:
         is_buyer = offer_data['is_buyer']
         
         # Check if user already has an active offer for this asset in the same direction
-        # 只能有一个active的offer
+        # only have one actived offer
         existing_offer = Offer.query.filter_by(
             user_id=offer_data['user_id'],
             asset_id=offer_data['asset_id'],
@@ -144,7 +144,7 @@ class OfferService:
             ValueError: If offer is inactive or validation fails
         """
 
-        # 根据id update
+        # update by id
         offer = db.session.get(Offer, offer_id)
         if not offer:
             return None
