@@ -23,7 +23,7 @@ class TestPortfolioUserTransactions:
             q.filter.return_value = q
             q.order_by.return_value = q
 
-            # paginate 返回一个带 items/total 的对象
+           # paginate returns an object with items/total
             pagination = Mock()
             pagination.items = fake_items
             pagination.total = 2
@@ -33,13 +33,13 @@ class TestPortfolioUserTransactions:
 
             assert items == fake_items
             assert total == 2
-            # 断言链路
+           
             mock_db.session.query.assert_called_once()
             assert q.join.called and q.filter.called and q.order_by.called
             q.paginate.assert_called_once_with(page=1, per_page=20, error_out=False)
 
     def test_user_transactions_with_asset_filter(self):
-        """带 asset_id 过滤应仍能正确返回分页结果。"""
+        """Filtering with asset_id should still return paginated results correctly."""
         user_id = 10
         asset_id = 2
         fake_items = [Mock()]
@@ -67,7 +67,7 @@ class TestPortfolioUserTransactions:
             q.paginate.assert_called_once_with(page=2, per_page=5, error_out=False)
 
     def test_user_transactions_empty(self):
-        """分页 items 为空时应返回空列表与 0 总数（或真实 total 值）。"""
+        """Pagination should return an empty list with a total of 0 (or a real total value) when the items are empty. """
         user_id = 99
 
         with patch("app.services.portfolio_service.db") as mock_db, \

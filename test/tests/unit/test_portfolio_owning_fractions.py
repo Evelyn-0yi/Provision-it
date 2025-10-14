@@ -11,30 +11,29 @@ from app.services.portfolio_service import PortfolioService
 class TestPortfolioOwningFractions:
     def test_user_owning_fractions_success(self):
         """
-        用户持有两种资产；应返回包含 asset_id/asset_name/units/latest_value/estimated_value 的两条记录，
-        且 latest_value 在无历史价时回退到 Asset.total_value。
+        The user holds two assets; two records containing asset_id/asset_name/units/latest_value/estimated_value should be returned.
+If there is no historical price, the latest_value will fall back to Asset.total_value.
         """
         user_id = 42
 
-        # ① mock: 聚合查询 rows（sum units by asset_id）
+        # mock: aggregate query rows（sum units by asset_id）
         rows = [
             SimpleNamespace(asset_id=1, units=30),
             SimpleNamespace(asset_id=2, units=10),
         ]
 
-        # ② mock: 资产信息（用于名称 & 当没有历史价时的回退值）
+        # mock: Asset information (for name & fallback value when no price history)
         asset1 = Mock()
         asset1.asset_id = 1
         asset1.asset_name = "Modern Art Painting"
-        asset1.total_value = "500"  # 注意你实现里会 float()
+        asset1.total_value = "500"  
 
         asset2 = Mock()
         asset2.asset_id = 2
         asset2.asset_name = "Technology Equity Fund A"
         asset2.total_value = "2000"
 
-        # ③ mock: 价格历史（这里返回 None，让代码走回退逻辑到 total_value）
-        # 如果你想测“有历史价”的分支，可以让 first() 返回一个对象带 value=xxx
+        # mock: price history (return None here to let the code fallback to total_value)
 
         with patch("app.services.portfolio_service.db") as mock_db, \
              patch("app.services.portfolio_service.Asset") as mock_asset_cls, \
@@ -76,13 +75,13 @@ class TestPortfolioOwningFractions:
             assert r2["latest_value"] == 2000.0
             assert r2["estimated_value"] == 10 * 2000.0
 
-            # 关键链路调用存在
+           
             mock_db.session.query.assert_called_once()
             assert q.filter.called and q.group_by.called and q.all.called
             assert mock_asset_query.filter.called
 
     def test_user_owning_fractions_empty(self):
-        """用户没有任何份额：应返回空列表。"""
+        """The user has no shares: an empty list should be returned."""
         user_id = 7
         with patch("app.services.portfolio_service.db") as mock_db, \
              patch("app.services.portfolio_service.Fraction") as mock_fraction_cls:
@@ -91,7 +90,7 @@ class TestPortfolioOwningFractions:
             mock_db.session.query.return_value = q
             q.filter.return_value = q
             q.group_by.return_value = q
-            q.all.return_value = []  # 无记录
+            q.all.return_value = []  
 
             result = PortfolioService.user_owning_fractions(user_id)
             assert result == []
