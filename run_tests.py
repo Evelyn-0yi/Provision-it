@@ -208,14 +208,14 @@ def setup_test_database():
         script_path = Path('test/test_database/manage_test_db.py')
         if script_path.exists():
             print("🔄 Resetting test database for clean test run...")
-            success, _ = run_command(['python', str(script_path), 'reset'], 
+            success, _ = run_command([sys.executable, str(script_path), 'reset'], 
                                    "Reset test database", capture_output=True)
             if not success:
                 print("❌ Test database reset failed")
                 return False
             
             print("📝 Setting up fresh test database...")
-            success, _ = run_command(['python', str(script_path), 'full-setup'], 
+            success, _ = run_command([sys.executable, str(script_path), 'full-setup'], 
                                    "Setup test database", capture_output=True)
             if success:
                 print("✅ Test database setup completed")
@@ -314,7 +314,7 @@ def run_tests(args):
     print_step(3, "Running tests")
     
     # Base pytest command
-    cmd = ['python', '-m', 'pytest']
+    cmd = [sys.executable, '-m', 'pytest']
     
     # Add verbosity
     if args.verbose:
