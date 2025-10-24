@@ -65,7 +65,6 @@ cd provision_it_v2
 
 # Run the automated setup script
 ./setup_env.sh
-```
 
 #### For Windows:
 ```cmd
@@ -143,6 +142,47 @@ python run.py
 # Or using Flask CLI
 flask run
 ```
+
+#### Windows Manual (PowerShell) — If automated script fails
+A. One-time setup
+# 0 Prereqs: Python 3.10+, PostgreSQL 14+ (with CLI), Git
+#    If psql is not in PATH, use full path, e.g.:
+#    & "C:\Program Files\PostgreSQL\17\bin\psql.exe" --version
+
+# 1 Activate venv and install dependencies
+& ".\.venv\Scripts\Activate.ps1"
+python -c "import sys; print(sys.executable)"
+pip install -r requirements.txt
+pip install requests psycopg2-binary
+
+# 2 Create .env (include TEST_DATABASE_URL)
+# NOTE: DATABASE_URL and TEST_DATABASE_URL should point to two different databases.
+# Example:
+# DATABASE_URL=postgresql://provision_user:provision_pass@localhost:5432/provision_it_v2
+# TEST_DATABASE_URL=postgresql://provision_user:provision_pass@localhost:5432/provision_it_v2_test
+
+# 3 Create role and databases (using postgres admin)
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -c "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='provision_user') THEN CREATE ROLE provision_user LOGIN PASSWORD 'provision_pass'; END IF; END $$;"
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -c "ALTER ROLE provision_user CREATEDB;"
+& "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O provision_user provision_it_v2
+& "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -O provision_user provision_it_v2_test
+
+B. Fix UTF-8/emoji console errors (if needed)
+$env:PYTHONIOENCODING = 'utf-8'
+$env:PYTHONUTF8 = '1'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+
+C. Run tests with a clean test database
+# 1) Reset + full setup for test DB (reads TEST_DATABASE_URL)
+python test\test_database\manage_test_db.py reset
+python test\test_database\manage_test_db.py full-setup
+
+# 2) Run unit tests + coverage
+python -X utf8 run_tests.py --unit --coverage
+
+# 3) Open coverage report
+start .\htmlcov\index.html
 
 The API will be available at `http://127.0.0.1:5001`
 
