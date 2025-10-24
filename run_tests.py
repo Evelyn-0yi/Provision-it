@@ -342,7 +342,7 @@ def run_tests(args):
             '--cov-report=term-missing',
             '--cov-report=html:htmlcov',
             '--cov-report=xml:coverage.xml',
-            '--cov-fail-under=40'
+            '--cov-fail-under=70'
         ])
     
     # Add other options
