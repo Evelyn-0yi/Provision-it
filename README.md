@@ -68,11 +68,13 @@ cd provision_it_v2
 
 #### For Windows:
 ```cmd
-REM Clone or copy the provision_it_v2 directory
-cd provision_it_v2
+###1. create_venv:
+create_venv.bat
 
-REM Run the automated setup script
+###2. create env and database
 setup_env.bat
+###3. import data
+python init_db_postgres.py
 ```
 
 The setup scripts will automatically:
