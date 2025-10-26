@@ -203,6 +203,28 @@ Database password:
 [INFO] Database URL: postgresql://postgres:***@localhost:5432/provision_it_v2
 ```
 
+## Additional postgreSQL download:
+
+#### For Unix/Linux/macOS:
+```bash
+brew update
+brew install postgresql@17
+# Then link it (so psql works globally):
+brew link postgresql@17 --force
+# You can start PostgreSQL 17 manually or enable background service:
+brew services start postgresql@17
+# Data directory (default): /usr/local/var/postgresql@17
+```
+
+#### For Windows:
+```cmd
+Invoke-WebRequest -Uri "https://get.enterprisedb.com/postgresql/postgresql-17.0-1-windows-x64.exe" -OutFile "$env:USERPROFILE\Downloads\postgresql-17-installer.exe"
+Start-Process -FilePath "$env:USERPROFILE\Downloads\postgresql-17-installer.exe" -Wait
+# Then follow the GUI installer steps (set password, port 5432, etc.).
+# Finally verify:
+"C:\Program Files\PostgreSQL\17\bin\psql.exe" -V
+```
+
 **Features:**
 - ✅ **Default values** provided for all fields (just press Enter to use defaults)
 - ✅ **Secure password input** (password is hidden while typing)
