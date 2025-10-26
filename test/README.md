@@ -48,10 +48,8 @@ python run_tests.py --e2e --auto-flask
 # With coverage
 python run_tests.py --unit --coverage
 
-# Database management
-python test/test_database/manage_test_db.py info
-python test/test_database/manage_test_db.py reset
-python test/test_database/manage_test_db.py full-setup
+# With details
+python run_tests.py --unit --verbose
 ```
 
 ## Test Types
