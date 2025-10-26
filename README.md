@@ -27,6 +27,9 @@ provision_it_v2/
 │         ├── integration      # Integration tests
 │         ├── Jest             # Jest testing embeded JavaScript functions in htmls
 │         └── unit             # Unit tests of backend
+├── .github/
+│   ├── pylint.yml             # Pylint format test
+│   └── python-app.yml         # Running auto tests when pushed based on run_tests.py
 ├── config.py                  # Configuration management
 ├── .flaskenv                  # Flask env
 ├── .coveragerc                # Coverage report env
@@ -35,7 +38,7 @@ provision_it_v2/
 ├── fix_sequences.sql          # Fix sequence synchronization issues after database import
 ├── init_db_postgres.py        # Database initialization
 ├── run.py                     # Application entry point
-├── 
+├── run_tests.py               # Application tests
 ├── requirements.txt           # Dependencies
 ├── .env                       # Environment configuration template
 ├── setup_env.sh               # Automated setup script for Unix/Linux/macOS
@@ -43,7 +46,11 @@ provision_it_v2/
 └── README.md                  # This file
 ```
 
-## 🚀 Quick Start on creating environment
+# 🚀 Quick Start
+
+If PostgreSQL is not installed on  device go to [Skip to PostgreSQL download](#additional-postgresql-download) first.
+
+## Creating environment
 
 ### Option 1: Automated Setup (Recommended)
 
@@ -65,8 +72,10 @@ cd provision_it_v2
 setup_env.bat
 
 # if vitural environment not auto active run follwoing:
+
 # Method 1 (CMD/Batch): 
 venv\Scripts\activate.bat
+
 #Method 2 (PowerShell): 
 .\venv\Scripts\Activate.ps1
 ```
@@ -119,7 +128,7 @@ pip install -r requirements.txt
 # OR use the automated setup scripts which create .env interactively
 ```
 
-# Initialize Database
+## Initialize/Drop Database
 
 ### Mac/Linux
 ```bash
@@ -143,23 +152,17 @@ WHERE pg_stat_activity.datname = 'provision_it_v2'
 ```
 
 ###  Windows:
-#### Add PostgreSQL bin to PATH (permanent fix)
-
-#### Steps
-
+### Add PostgreSQL bin to PATH (permanent fix for convinence)
+**Steps:**
 1. Press Win + R, type ``sysdm.cpl``, hit Enter. → Opens System Properties.
-
 2. Go to Advanced tab → click Environment Variables.
-
 3. Under User variables, find Path.
     - If it exists → select it, click Edit.
     - If not → click New.
-
 4.Add this line (adjust version number if needed):
 ```makefile
 C:\Program Files\PostgreSQL\17\bin
 ```
-
 5. Click OK → close all dialogs.
 6. Restart PowerShell / terminal.
 7. Test it works:
@@ -167,8 +170,8 @@ C:\Program Files\PostgreSQL\17\bin
 psql --version
 createdb --help
 ```
-If it shows version, the Python script will work without changes.
-
+If it shows version, the Python script will work without changes. 
+[Back to start](#creating-environment)
 ```powershell
 # 1. Create database
 createdb -U your_username your_database_name
@@ -195,23 +198,29 @@ WHERE pg_stat_activity.datname = 'provision_it_v2'
 ```bash
 brew update
 brew install postgresql@17
+
 # Then link it (so psql works globally):
 brew link postgresql@17 --force
+
 # You can start PostgreSQL 17 manually or enable background service:
 brew services start postgresql@17
 # Data directory (default): /usr/local/var/postgresql@17
 ```
+[Back to start](#creating-environment)
 
 #### For Windows:
 ```powershell
 Invoke-WebRequest -Uri "https://get.enterprisedb.com/postgresql/postgresql-17.0-1-windows-x64.exe" -OutFile "$env:USERPROFILE\Downloads\postgresql-17-installer.exe"
 Start-Process -FilePath "$env:USERPROFILE\Downloads\postgresql-17-installer.exe" -Wait
+
 # Then follow the GUI installer steps (set password, port 5432, etc.).
+
 # Finally verify:
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -V
 ```
+Then [add global path to the system](#windows).
 
-#Run the Application
+# Run the Application
 
 ```bash
 # Development server
@@ -220,13 +229,6 @@ python run.py
 # Or using Flask CLI
 flask run
 ```
-
-**Features:**
-- ✅ **Default values** provided for all fields (just press Enter to use defaults)
-- ✅ **Secure password input** (password is hidden while typing)
-- ✅ **Automatic secret key generation** using Python's `secrets` module
-- ✅ **Complete .env file creation** with all necessary variables
-- ✅ **Backup existing .env** files automatically
 
 ## 🔍 Health Checks
 
@@ -309,7 +311,7 @@ The models in `app/models.py` already match the schema structure. To add new mod
 | `FLASK_HOST` | Server host | `127.0.0.1` |
 | `FLASK_PORT` | Server port | `5001` |
 | `SECRET_KEY` | Flask secret key | `dev-secret-key-change-in-production` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://localhost/api_backbone` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://localhost/database_name` |
 
 ### Configuration Classes
 
@@ -323,7 +325,7 @@ The models in `app/models.py` already match the schema structure. To add new mod
 
 1. **Clone the repository**
 2. **Run `setup_env.sh/setup_env.bat` to create `.env`** and configure your database
-3. **If step 2 not working: install and create dependencies manually**: `pip install -r requirements.txt`
+3. **If step 2 not working: create and install dependencies manually**: `pip install -r requirements.txt`
 4. **Initialize database**: `python init_db_postgres.py`
 5. **Run tests**: `python run_tests.py`
 6. **Start development**: `python run.py`
