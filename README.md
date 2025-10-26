@@ -24,20 +24,57 @@ provision_it_v2/
 ├── app/
 │   ├── __init__.py            # App factory with Blueprint auto-discovery
 │   ├── models.py              # SQLAlchemy models matching schema.sql
+│   ├── database.py            # Database configuration and connection
 │   ├── decorators.py          # Authentication and validation decorators
 │   ├── controllers/           # MVC Controllers
+│   │   ├── __init__.py
+│   │   ├── base_controller.py # Base controller class
 │   │   ├── auth_controller.py # Authentication controller
-│   │   └── user_controller.py # User management controller
-│   ├── services/              # MVC Services (business logic)
+│   │   ├── user_controller.py # User management controller
+│   │   ├── asset_controller.py # Asset management controller
+│   │   ├── fraction_controller.py # Fraction management controller
+│   │   ├── health_controller.py # Health check controller
+│   │   ├── offer_controller.py # Offer management controller
+│   │   ├── portfolio_controller.py # Portfolio management controller
+│   │   ├── trading_controller.py # Trading controller
+│   │   └── transaction_controller.py # Transaction controller
+│   ├── services/             # MVC Services (business logic)
+│   │   ├── __init__.py
 │   │   ├── auth_service.py    # Authentication service
-│   │   └── user_service.py    # User management service
+│   │   ├── user_service.py    # User management service
+│   │   ├── asset_service.py   # Asset management service
+│   │   ├── asset_value_service.py # Asset value calculation service
+│   │   ├── fraction_service.py # Fraction management service
+│   │   ├── health_service.py  # Health check service
+│   │   ├── offer_service.py   # Offer management service
+│   │   ├── portfolio_service.py # Portfolio management service
+│   │   ├── trading_service.py # Trading service
+│   │   └── transaction_service.py # Transaction service
 │   ├── views/                 # MVC Views (response formatting)
+│   │   ├── __init__.py
+│   │   ├── base_view.py       # Base view class
 │   │   ├── auth_view.py       # Authentication view
-│   │   └── user_view.py       # User management view
+│   │   ├── user_view.py       # User management view
+│   │   ├── asset_view.py      # Asset management view
+│   │   ├── fraction_view.py   # Fraction management view
+│   │   ├── health_view.py     # Health check view
+│   │   ├── offer_view.py      # Offer management view
+│   │   ├── portfolio_view.py  # Portfolio management view
+│   │   ├── trading_view.py    # Trading view
+│   │   └── transaction_view.py # Transaction view
 │   └── routes/                # URL routing
+│       ├── __init__.py
 │       ├── auth.py            # Authentication endpoints
 │       ├── users.py           # User management endpoints
-│       └── health.py          # Health check endpoints
+│       ├── assets.py          # Asset management endpoints
+│       ├── fractions.py       # Fraction management endpoints
+│       ├── health.py          # Health check endpoints
+│       ├── offers.py          # Offer management endpoints
+│       ├── portfolio.py       # Portfolio management endpoints
+│       ├── tradings.py        # Trading endpoints
+│       ├── transactions.py    # Transaction endpoints
+│       ├── frontend.py        # Frontend serving endpoints
+│       └── test.py            # Test endpoints
 ├── tests/
 │   ├── test_db.py             # Database connectivity tests
 │   └── test_user_api.py       # Authentication and user management tests
