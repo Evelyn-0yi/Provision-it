@@ -550,11 +550,11 @@ def main():
             if success:
                 print_header("Test Run Completed Successfully! 🎉")
                 print("\n💡 Tips:")
-                print("   - Use --unit to run only unit tests (44 tests)")
-                print("   - Use --integration to run only integration tests (22 tests)")
-                print("   - Use --e2e for E2E tests (13 tests)")
+                print("   - Use --unit to run only unit tests")
+                print("   - Use --integration to run only integration tests")
+                print("   - Use --e2e for E2E tests")
                 print("   - Use --Jest for frontend unit tests")
-                print("   - Use --infrastructure for database setup tests (19 tests)")
+                print("   - Use --infrastructure for database setup tests")
                 print("   - Use --coverage to see test coverage")
                 print("   - Use --verbose for detailed output")
             else:
