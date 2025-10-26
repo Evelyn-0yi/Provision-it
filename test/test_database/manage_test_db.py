@@ -11,6 +11,12 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from pathlib import Path
 
+import io
+
+# Force UTF-8 stdout/stderr
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 # Set up paths and import shared utilities
 from shared_utils import setup_paths, load_environment, parse_database_url, seed_test_database, clear_test_database_data, get_server_connection_params
 setup_paths()

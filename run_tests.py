@@ -14,6 +14,12 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 
+import io
+
+# Force UTF-8 stdout/stderr
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 # Load environment variables from .env file
 load_dotenv()
 
