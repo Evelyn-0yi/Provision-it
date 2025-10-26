@@ -110,6 +110,13 @@ create_venv.bat
 
 ###2. create env and database
 setup_env.bat
+
+# if vitural environment not auto active run follwoing:
+# Method 1 (CMD/Batch): 
+venv\Scripts\activate.bat
+#Method 2 (PowerShell): 
+.\venv\Scripts\Activate.ps1
+
 ###3. import data
 python init_db_postgres.py
 ```
@@ -171,6 +178,34 @@ FROM pg_stat_activity
 WHERE pg_stat_activity.datname = 'provision_it_v2'
   AND pid <> pg_backend_pid();
 ```
+## on windows:
+### Add PostgreSQL bin to PATH (permanent fix)
+
+#### Steps
+
+1. Press Win + R, type sysdm.cpl, hit Enter. → Opens System Properties.
+
+2. Go to Advanced tab → click Environment Variables.
+
+3. Under User variables, find Path.
+  - If it exists → select it, click Edit.
+  - If not → click New.
+
+4.Add this line (adjust version number if needed):
+```makefile
+C:\Program Files\PostgreSQL\17\bin
+```
+
+5. Click OK → close all dialogs.
+6. Restart PowerShell / terminal.
+7. Test it works:
+```powershell
+psql --version
+createdb --help
+```
+If it shows version, the Python script will work without changes.
+
+Follow the same commands above
 
 #### 4. Run the Application
 
