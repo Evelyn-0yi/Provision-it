@@ -160,11 +160,37 @@ frontend/
 └── Icons/              # Application icons and assets
 ```
 
+### Database Schema Files
+
+```
+├── schema_postgres.sql      # Main database schema with tables, functions, triggers
+├── import_postgres.sql      # Initial data import for testing
+├── fix_sequences.sql        # Fix sequence synchronization issues
+└── init_db_postgres.py      # Database initialization script
+```
+
+### Core Application Files
+
+```
+├── run.py                  # Application entry point
+├── run_tests.py            # Comprehensive test runner
+├── config.py               # Configuration management
+├── requirements.txt        # Python dependencies
+└── .env                    # Environment configuration
+```
+
+### Setup Scripts
+
+```
+├── setup_env.sh            # Automated setup script for Unix/Linux/macOS
+└── setup_env.bat           # Automated setup script for Windows
+```
+
 ### Testing
 
 ```
 test/
-├── tests/              # Comprehensive test suite
+├── tests/             # Comprehensive test suite
 │   ├── E2E/           # End-to-end tests with Playwright
 │   ├── integration/   # Integration tests
 │   ├── Jest/          # Frontend JavaScript tests
