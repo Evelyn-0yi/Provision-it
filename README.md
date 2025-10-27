@@ -3,7 +3,8 @@
   Fractionalized Real-World Assets Database Schema
 </h1>
 
-A comprehensive database schema and Flask API backend for managing fractionalized real-world assets, developed for **Provision-it**. This system enables tracking, trading, and reporting of asset fractions at scale with **functionality and scalability** in mind.
+This project implements a proof-of-concept schema and system for **fractionalised ownership of real-world assets**.
+It supports asset creation, fraction trading, valuation tracking, and historical ledger views.
 
 ## Problem Statement
 
