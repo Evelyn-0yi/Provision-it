@@ -289,7 +289,11 @@ The application includes several health check endpoints:
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the [MIT License](./LICENSE).
+
+© 2025 Group 12 – Provision IT (COMP30022, University of Melbourne)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 <br/>
 
