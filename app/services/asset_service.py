@@ -35,14 +35,14 @@ class AssetService:
         unit_min = asset_data['unit_min']
         unit_max = asset_data['unit_max']
         
-        if unit_min > unit_max:
-            raise ValueError("unit_min cannot be greater than unit_max")
+        if unit_min < 1:
+            raise ValueError("unit_min must be at least 1")
         
-        if total_unit < unit_min:
-            raise ValueError("total_unit cannot be less than unit_min")
+        if unit_max < unit_min:
+            raise ValueError("unit_max cannot be less than unit_min")
         
-        if total_unit > unit_max:
-            raise ValueError("total_unit cannot be greater than unit_max")
+        if unit_min > total_unit:
+            raise ValueError("unit_min cannot be greater than total_unit")
         
         asset = Asset(
             asset_name=asset_data['asset_name'],
@@ -69,7 +69,7 @@ class AssetService:
         Returns:
             Asset or None if not found
         """
-        return Asset.query.get(asset_id)
+        return db.session.get(Asset, asset_id)
     
     @staticmethod
     def get_all_assets(page: int = 1, per_page: int = 20) -> List[Asset]:
@@ -101,7 +101,7 @@ class AssetService:
         Returns:
             Updated Asset or None if not found
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return None
         
@@ -125,7 +125,7 @@ class AssetService:
         Returns:
             True if deleted, False if not found
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return False
         
@@ -144,7 +144,7 @@ class AssetService:
         Returns:
             List of Fraction objects
         """
-        asset = Asset.query.get(asset_id)
+        asset = db.session.get(Asset, asset_id)
         if not asset:
             return []
         
@@ -168,13 +168,13 @@ class AssetService:
             ValueError: If required fields are missing or invalid
         """
         # Validate owner exists
-        owner = User.query.get(owner_id)
+        owner = db.session.get(User, owner_id)
         if not owner:
             raise ValueError("Owner user not found")
         
         # Validate admin user exists and is a manager
         if admin_user_id:
-            admin_user = User.query.get(admin_user_id)
+            admin_user = db.session.get(User, admin_user_id)
             if not admin_user:
                 raise ValueError("Admin user not found")
             if not admin_user.is_manager:
@@ -197,7 +197,7 @@ class AssetService:
                 units=total_unit,
                 is_active=True,
                 created_at=datetime.utcnow(),
-                value_perunit=int(value_per_unit * 100)  # Store as integer (cents)
+                value_perunit=value_per_unit  # Store as decimal (NUMERIC(18,2))
             )
             
             db.session.add(fraction)
@@ -209,7 +209,7 @@ class AssetService:
                 recorded_at=datetime.utcnow(),
                 source='initial_creation',
                 adjusted_by=admin_user_id,  # Admin who created the asset
-                adjustment_reason='Initial asset creation'
+                adjustment_reason='Initial value'
             )
             
             db.session.add(value_history)

@@ -111,9 +111,11 @@ def seed_test_database(test_db_config):
         
         # Insert sample assets (without specifying asset_id since it's GENERATED ALWAYS)
         assets_data = [
-            ('Test Asset 1', 'Description for test asset 1', 1000, 1, 100, 10000.00),
-            ('Test Asset 2', 'Description for test asset 2', 500, 1, 50, 5000.00),
-            ('Test Asset 3', 'Description for test asset 3', 200, 1, 20, 2000.00)
+            ('Modern Art Painting', 'Contemporary art collection piece', 1000, 1, 100, 1000000.00),
+            ('Technology Equity Fund A', 'Diversified tech sector investment fund', 500, 1, 50, 500000.00),
+            ('Commercial Real Estate Trust', 'Prime location commercial property portfolio', 2000, 10, 200, 2000000.00),
+            ('Crypto Token', 'Digital asset cryptocurrency holdings', 10000, 1, 1000, 100000.00),
+            ('Vintage Sports Car', 'Classic collectible automobile', 100, 1, 10, 250000.00)
         ]
         
         asset_ids = []
@@ -127,10 +129,21 @@ def seed_test_database(test_db_config):
         
         # Insert sample fractions (using actual user_ids and asset_ids from above)
         fractions_data = [
-            (asset_ids[0], user_ids[0], None, 100, True, 10.00),  # Admin owns 100 units of Asset 1
-            (asset_ids[0], user_ids[1], None, 50, True, 10.00),   # User1 owns 50 units of Asset 1
-            (asset_ids[1], user_ids[2], None, 25, True, 20.00),   # User2 owns 25 units of Asset 2
-            (asset_ids[2], user_ids[3], None, 10, True, 100.00)  # Manager1 owns 10 units of Asset 3
+            # Modern Art Painting (Asset 0)
+            (asset_ids[0], user_ids[0], None, 600, True, 1000.00),   # admin owns 600 units
+            (asset_ids[0], user_ids[1], None, 400, True, 1000.00),   # testuser1 owns 400 units
+            # Technology Equity Fund (Asset 1)
+            (asset_ids[1], user_ids[0], None, 300, True, 1000.00),   # admin owns 300 units
+            (asset_ids[1], user_ids[2], None, 200, True, 1000.00),   # testuser2 owns 200 units
+            # Commercial Real Estate (Asset 2)
+            (asset_ids[2], user_ids[1], None, 1000, True, 1000.00),  # testuser1 owns 1000 units
+            (asset_ids[2], user_ids[3], None, 1000, True, 1000.00),  # manager1 owns 1000 units
+            # Crypto Token (Asset 3)
+            (asset_ids[3], user_ids[0], None, 5000, True, 10.00),    # admin owns 5000 units
+            (asset_ids[3], user_ids[1], None, 5000, True, 10.00),    # testuser1 owns 5000 units
+            # Vintage Sports Car (Asset 4)
+            (asset_ids[4], user_ids[2], None, 50, True, 2500.00),    # testuser2 owns 50 units
+            (asset_ids[4], user_ids[3], None, 50, True, 2500.00)     # manager1 owns 50 units
         ]
         
         for asset_id, owner_id, parent_id, units, is_active, value_per_unit in fractions_data:
@@ -141,10 +154,20 @@ def seed_test_database(test_db_config):
         
         # Insert sample asset value history (using actual asset_ids)
         value_history_data = [
-            (asset_ids[0], 10.00, 'system', None, 'Initial value'),
-            (asset_ids[0], 12.00, 'admin', user_ids[0], 'Value adjustment'),
-            (asset_ids[1], 20.00, 'system', None, 'Initial value'),
-            (asset_ids[2], 100.00, 'system', None, 'Initial value')
+            # Modern Art Painting history
+            (asset_ids[0], 1000000.00, 'manual_adjust', user_ids[0], 'Initial value'),
+            (asset_ids[0], 1050000.00, 'manual_adjust', user_ids[0], 'Market appreciation'),
+            # Technology Equity Fund history
+            (asset_ids[1], 500000.00, 'manual_adjust', user_ids[0], 'Initial value'),
+            (asset_ids[1], 520000.00, 'manual_adjust', user_ids[0], 'Tech sector growth'),
+            # Commercial Real Estate history
+            (asset_ids[2], 2000000.00, 'manual_adjust', user_ids[0], 'Initial value'),
+            (asset_ids[2], 2050000.00, 'manual_adjust', user_ids[0], 'Property appreciation'),
+            # Crypto Token history
+            (asset_ids[3], 100000.00, 'manual_adjust', user_ids[0], 'Initial value'),
+            (asset_ids[3], 110000.00, 'manual_adjust', user_ids[0], 'Market recovery'),
+            # Vintage Sports Car history
+            (asset_ids[4], 250000.00, 'manual_adjust', user_ids[0], 'Initial valuation')
         ]
         
         for asset_id, value, source, adjusted_by, reason in value_history_data:

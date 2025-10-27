@@ -16,10 +16,16 @@ test/
 │   ├── conftest.py         # Pytest configuration and fixtures
 │   ├── unit/               # Unit tests
 │   ├── integration/        # Integration tests
-│   ├── test_db.py          # Database tests
-│   └── test_database_setup.py # Database setup tests
+│   ├── E2E                 # End-to-end Playwright tests
+│   ├── Jest                # JavaScript functions unit tests in htmls
+│   ├── infrastructure/     # Database tests
 └── test_database/          # Database test management
+    ├── __init__.py
     ├── manage_test_db.py   # Database setup/teardown script
+    ├── manage.py           # Database for programmatic access
+    ├── setup_schema.py     # Database schema
+    ├── setup.py            # Test database setup utilities
+    ├──shared_utils.py      # Database shared utils
     └── init_test_db.py     # Database initialization script
 ```
 
@@ -35,14 +41,15 @@ python run_tests.py
 python run_tests.py --unit
 python run_tests.py --database
 python run_tests.py --integration
+python run_tests.py --infrastrcuture
+python run_tests.py --Jest
+python run_tests.py --e2e --auto-flask
 
 # With coverage
 python run_tests.py --unit --coverage
 
-# Database management
-python test/test_database/manage_test_db.py info
-python test/test_database/manage_test_db.py reset
-python test/test_database/manage_test_db.py full-setup
+# With details
+python run_tests.py --unit --verbose
 ```
 
 ## Test Types
@@ -59,11 +66,23 @@ python test/test_database/manage_test_db.py full-setup
 - Test API endpoints
 - End-to-end workflows
 
-### Database Tests (`test/tests/test_db.py`, `test/tests/test_database_setup.py`)
+### Database Tests (`test/infrastructure/`)
 - Test database schema and setup
 - Verify database constraints
 - Test data fixtures
 - Database isolation
+
+### E2E Tests (`test/tests/E2E/`)
+- Test complete user workflows end-to-end
+- Use Playwright for browser automation
+- Test real user interactions
+- Validate full application functionality
+
+### Jest Tests (`test/tests/Jest/`)
+- Test JavaScript functions in HTML files
+- Unit tests for frontend JavaScript code
+- Validate client-side functionality
+- Test user interface interactions
 
 ## Test Utilities (`test/test_utils/`)
 

@@ -1,5 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal ENABLEDELAYEDEXPANSION
 
 REM Flask API Backbone - Environment Setup Script for Windows
 REM =========================================================
@@ -8,122 +8,78 @@ REM - Creates virtual environment
 REM - Installs dependencies from requirements.txt
 REM - Creates .env file with database configuration
 
-REM Function to print colored output
-:print_status
-echo [INFO] %~1
-goto :eof
+echo ==========================================
+echo Flask API Backbone - Environment Setup
+echo ==========================================
+echo.
 
-:print_success
-echo [SUCCESS] %~1
-goto :eof
-
-:print_warning
-echo [WARNING] %~1
-goto :eof
-
-:print_error
-echo [ERROR] %~1
-goto :eof
-
-REM Function to check if command exists
-:command_exists
-where "%~1" >nul 2>&1
-if %errorlevel% equ 0 (
-    set "%~2=1"
-) else (
-    set "%~2=0"
-)
-goto :eof
-
-REM Function to check Python version
-:check_python_version
-call :print_status "Checking Python installation..."
-
-REM Check for Python 3 first, then Python
+REM Step 1: Check Python version
+echo [INFO] Checking Python installation...
 python --version >nul 2>&1
-if %errorlevel% equ 0 (
-    set PYTHON_CMD=python
-) else (
-    call :print_error "Python is not installed or not in PATH"
+if %errorlevel% neq 0 (
+    echo [ERROR] Python is not installed or not in PATH
+    pause
     exit /b 1
 )
 
-REM Get Python version
-for /f "tokens=2" %%i in ('!PYTHON_CMD! --version 2^>^&1') do set PYTHON_VERSION=%%i
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
+echo [SUCCESS] Python found: %PYTHON_VERSION%
+echo.
 
-REM Extract major and minor version numbers
-for /f "tokens=1,2 delims=." %%a in ("!PYTHON_VERSION!") do (
-    set PYTHON_MAJOR=%%a
-    set PYTHON_MINOR=%%b
-)
-
-REM Check if Python version is 3.8 or higher
-if !PYTHON_MAJOR! lss 3 (
-    call :print_error "Python 3.8+ is required. Found: !PYTHON_VERSION!"
-    exit /b 1
-)
-
-if !PYTHON_MAJOR! equ 3 (
-    if !PYTHON_MINOR! lss 8 (
-        call :print_error "Python 3.8+ is required. Found: !PYTHON_VERSION!"
-        exit /b 1
-    )
-)
-
-call :print_success "Python version check passed: !PYTHON_VERSION!"
-goto :eof
-
-REM Function to create virtual environment
-:create_venv
-call :print_status "Creating virtual environment..."
+REM Step 2: Create virtual environment
+echo [INFO] Creating virtual environment...
 
 if exist "venv" (
-    call :print_warning "Virtual environment already exists. Removing old one..."
+    echo [WARNING] Virtual environment already exists. Removing old one...
     rmdir /s /q venv
 )
 
-!PYTHON_CMD! -m venv venv
-if %errorlevel% equ 0 (
-    call :print_success "Virtual environment created successfully"
-) else (
-    call :print_error "Failed to create virtual environment"
+python -m venv venv
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to create virtual environment
+    pause
     exit /b 1
 )
-goto :eof
 
-REM Function to activate virtual environment and install dependencies
-:install_dependencies
-call :print_status "Activating virtual environment and installing dependencies..."
+echo [SUCCESS] Virtual environment created successfully
+echo.
 
-REM Activate virtual environment
-call venv\Scripts\activate.bat
+REM Step 3: Install dependencies
+echo [INFO] Installing dependencies from requirements.txt...
 
-REM Upgrade pip
-call :print_status "Upgrading pip..."
+REM Upgrade pip first
 python -m pip install --upgrade pip
 
-REM Install dependencies
-call :print_status "Installing dependencies from requirements.txt..."
-pip install -r requirements.txt
-if %errorlevel% equ 0 (
-    call :print_success "Dependencies installed successfully"
-) else (
-    call :print_error "Failed to install dependencies"
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to upgrade pip
+    pause
     exit /b 1
 )
-goto :eof
 
-REM Function to setup environment file
-:setup_env_file
-call :print_status "Setting up environment configuration..."
+REM Install packages using venv's pip
+venv\Scripts\python.exe -m pip install --upgrade pip
+venv\Scripts\pip.exe install -r requirements.txt
 
-if exist ".env" (
-    call :print_warning ".env file already exists. Backing up to .env.backup"
-    copy .env .env.backup >nul
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install dependencies
+    pause
+    exit /b 1
 )
 
-REM Get database configuration from user
-call :print_status "Configuring database settings..."
+echo [SUCCESS] Dependencies installed successfully
+echo.
+echo [INFO] Virtual environment is ready!
+echo [INFO] To activate it, use one of these methods:
+echo   Method 1 (CMD/Batch): venv\Scripts\activate.bat
+echo   Method 2 (PowerShell): .\venv\Scripts\Activate.ps1
+echo   Method 3 (PowerShell - if blocked): Set-ExecutionPolicy RemoteSigned -Scope CurrentUser (run once)
+echo.
+
+REM Step 4: Get PostgreSQL configuration from user
+echo [INFO] Configuring database settings...
+echo.
+echo Please enter your PostgreSQL database configuration:
+echo.
 
 REM Default values
 set DB_HOST=localhost
@@ -133,26 +89,29 @@ set DB_USER=username
 set DB_PASSWORD=password
 
 REM Get database host
-set /p "input_host=Database host [%DB_HOST%]: "
+set /p input_host="Database host [%DB_HOST%]: "
 if not "!input_host!"=="" set DB_HOST=!input_host!
 
 REM Get database port
-set /p "input_port=Database port [%DB_PORT%]: "
+set /p input_port="Database port [%DB_PORT%]: "
 if not "!input_port!"=="" set DB_PORT=!input_port!
 
 REM Get database name
-set /p "input_name=Database name [%DB_NAME%]: "
+set /p input_name="Database name [%DB_NAME%]: "
 if not "!input_name!"=="" set DB_NAME=!input_name!
 
 REM Get database user
-set /p "input_user=Database user [%DB_USER%]: "
+set /p input_user="Database user [%DB_USER%]: "
 if not "!input_user!"=="" set DB_USER=!input_user!
 
 REM Get database password
 set /p "input_password=Database password: "
 if not "!input_password!"=="" set DB_PASSWORD=!input_password!
 
-REM Generate secret key
+echo.
+
+REM Step 5: Generate secret key
+echo [INFO] Generating secret key...
 python -c "import secrets; print(secrets.token_hex(32))" > temp_secret.txt 2>nul
 if exist temp_secret.txt (
     set /p SECRET_KEY=<temp_secret.txt
@@ -161,128 +120,71 @@ if exist temp_secret.txt (
     set SECRET_KEY=dev-secret-key-change-in-production
 )
 
-REM Create .env file
-echo # Flask API Backbone - Environment Configuration > .env
-echo # ============================================== >> .env
-echo # Generated by setup script on %date% %time% >> .env
-echo. >> .env
-echo # Flask Configuration >> .env
-echo FLASK_ENV=development >> .env
-echo FLASK_DEBUG=true >> .env
-echo FLASK_HOST=127.0.0.1 >> .env
-echo FLASK_PORT=5001 >> .env
-echo. >> .env
-echo # Security >> .env
-echo SECRET_KEY=!SECRET_KEY! >> .env
-echo. >> .env
-echo # Database Configuration >> .env
-echo DATABASE_URL=postgresql://!DB_USER!:!DB_PASSWORD!@!DB_HOST!:!DB_PORT!/!DB_NAME! >> .env
-echo. >> .env
-echo # For testing (optional) >> .env
-echo TEST_DATABASE_URL=postgresql://!DB_USER!:!DB_PASSWORD!@!DB_HOST!:!DB_PORT!/!DB_NAME!_test >> .env
-
-call :print_success ".env file created with database configuration"
-call :print_status "Database URL: postgresql://!DB_USER!:***@!DB_HOST!:!DB_PORT!/!DB_NAME!"
-goto :eof
-
-REM Function to check database connection
-:check_database
-call :print_status "Checking database configuration..."
+REM Step 6: Create .env file
+echo [INFO] Creating .env file...
 
 if exist ".env" (
-    REM Extract database info from .env file
-    for /f "tokens=2 delims==" %%a in ('findstr "DATABASE_URL" .env') do set DATABASE_URL=%%a
-    
-    if "!DATABASE_URL!"=="" (
-        call :print_warning "DATABASE_URL not set in .env file"
-        goto :eof
-    )
-    
-    REM Parse database URL (simplified parsing for Windows)
-    for /f "tokens=4,6,7 delims=:/@" %%a in ("!DATABASE_URL!") do (
-        set DB_HOST=%%a
-        set DB_PORT=%%b
-        set DB_NAME=%%c
-    )
-    
-    call :print_status "Database configuration found:"
-    call :print_status "  Host: !DB_HOST!"
-    call :print_status "  Port: !DB_PORT!"
-    call :print_status "  Database: !DB_NAME!"
-    
-    REM Check if PostgreSQL is accessible
-    call :command_exists psql PSQL_EXISTS
-    if !PSQL_EXISTS! equ 1 (
-        call :print_status "Testing database connection..."
-        psql "!DATABASE_URL!" -c "SELECT 1;" >nul 2>&1
-        if !errorlevel! equ 0 (
-            call :print_success "Database connection successful"
-        ) else (
-            call :print_warning "Database connection failed. Please check your configuration."
-        )
-    ) else (
-        call :print_warning "psql not found. Cannot test database connection."
-    )
-) else (
-    call :print_warning ".env file not found. Please configure database settings."
+    echo [WARNING] .env file already exists. Backing up to .env.backup
+    copy .env .env.backup >nul
 )
-goto :eof
 
-REM Function to show final instructions
-:show_final_instructions
+REM Create the .env file using a Python script to ensure UTF-8 encoding
+echo import os > create_env_temp.py
+echo db_host = os.environ.get('DB_HOST', 'localhost') >> create_env_temp.py
+echo db_port = os.environ.get('DB_PORT', '5432') >> create_env_temp.py
+echo db_name = os.environ.get('DB_NAME', 'provision_it_v2') >> create_env_temp.py
+echo db_user = os.environ.get('DB_USER', 'username') >> create_env_temp.py
+echo db_password = os.environ.get('DB_PASSWORD', 'password') >> create_env_temp.py
+echo secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production') >> create_env_temp.py
+echo f = open('.env', 'w', encoding='utf-8') >> create_env_temp.py
+echo f.write('# Flask API Backbone - Environment Configuration\n') >> create_env_temp.py
+echo f.write('# ==============================================\n') >> create_env_temp.py
+echo f.write('# Generated by setup script\n\n') >> create_env_temp.py
+echo f.write('# Flask Configuration\n') >> create_env_temp.py
+echo f.write('FLASK_ENV=development\n') >> create_env_temp.py
+echo f.write('FLASK_DEBUG=true\n') >> create_env_temp.py
+echo f.write('FLASK_HOST=127.0.0.1\n') >> create_env_temp.py
+echo f.write('FLASK_PORT=5001\n\n') >> create_env_temp.py
+echo f.write('# Security\n') >> create_env_temp.py
+echo f.write(f'SECRET_KEY={secret_key}\n\n') >> create_env_temp.py
+echo f.write('# Database Configuration\n') >> create_env_temp.py
+echo f.write(f'DATABASE_URL=postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}\n\n') >> create_env_temp.py
+echo f.write('# For testing (optional)\n') >> create_env_temp.py
+echo f.write(f'TEST_DATABASE_URL=postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}_test\n') >> create_env_temp.py
+echo f.close() >> create_env_temp.py
+
+set DB_HOST=!DB_HOST!
+set DB_PORT=!DB_PORT!
+set DB_NAME=!DB_NAME!
+set DB_USER=!DB_USER!
+set DB_PASSWORD=!DB_PASSWORD!
+set SECRET_KEY=!SECRET_KEY!
+python create_env_temp.py
+del create_env_temp.py
+
+echo [SUCCESS] .env file created with database configuration
+echo [INFO] Database URL: postgresql://!DB_USER!:***@!DB_HOST!:!DB_PORT!/!DB_NAME!
 echo.
+
+REM Final instructions
 echo ==========================================
-call :print_success "Environment setup completed successfully!"
+echo [SUCCESS] Environment setup completed successfully!
 echo ==========================================
 echo.
-call :print_status "Next steps:"
-echo 1. Create PostgreSQL database: createdb provision_it_v2
-echo 2. Initialize schema: psql -h localhost -U username -d provision_it_v2 -f schema_postgres.sql
-echo 3. Import data: psql -h localhost -U username -d provision_it_v2 -f import_postgres.sql
-echo 4. Activate virtual environment: venv\Scripts\activate.bat
+echo [INFO] Next steps:
+echo 1. Ensure PostgreSQL is running and create the database if needed
+echo 2. Initialize schema: psql -h !DB_HOST! -U !DB_USER! -d !DB_NAME! -f schema_postgres.sql
+echo 3. Import data: psql -h !DB_HOST! -U !DB_USER! -d !DB_NAME! -f import_postgres.sql
+echo 4. Activate virtual environment:
+echo    - In CMD: venv\Scripts\activate.bat
+echo    - In PowerShell: .\venv\Scripts\activate.bat
 echo 5. Run the application: python run.py
 echo.
-call :print_status "Available database commands:"
-echo   createdb provision_it_v2                                     - Create database
-echo   psql -h localhost -U username -d provision_it_v2 -f schema_postgres.sql - Initialize schema
-echo   psql -h localhost -U username -d provision_it_v2 -f import_postgres.sql  - Import data
-echo.
-call :print_status "Health check endpoints (after running the app):"
+echo [INFO] Health check endpoints (after running the app):
 echo   http://localhost:5001/health
 echo   http://localhost:5001/health/db
 echo   http://localhost:5001/health/detailed
 echo.
-goto :eof
 
-REM Main setup function
-:main
-echo 🚀 Flask API Backbone - Environment Setup
-echo ==========================================
-echo.
-
-REM Check Python version
-call :check_python_version
-if %errorlevel% neq 0 exit /b 1
-
-REM Create virtual environment
-call :create_venv
-if %errorlevel% neq 0 exit /b 1
-
-REM Install dependencies
-call :install_dependencies
-if %errorlevel% neq 0 exit /b 1
-
-REM Setup environment file
-call :setup_env_file
-if %errorlevel% neq 0 exit /b 1
-
-REM Check database configuration
-call :check_database
-
-REM Show final instructions
-call :show_final_instructions
-
-goto :eof
-
-REM Run main function
-call :main
+pause
+exit /b 0

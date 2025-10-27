@@ -1,250 +1,268 @@
-# Flask API Backbone
+<h1 align="center">
+  <img src="frontend/Icons/pvit90.png" width="150px"/><br/>
+  Fractionalized Real-World Assets Database Schema
+</h1>
 
-A minimal, modular, and extensible Flask + SQLAlchemy backend skeleton for collaborative development.
+This project implements a proof-of-concept schema and system for **fractionalised ownership of real-world assets**.
+It supports asset creation, fraction trading, valuation tracking, and historical ledger views.
 
-## 🎯 Features
+## Problem Statement
 
-- **Minimal Setup**: Only essential dependencies included
-- **Auto-Discovery**: Automatically registers Blueprints from `app/routes/` folder
-- **Database Ready**: PostgreSQL integration with SQLAlchemy
-- **Schema-Based Init**: Uses SQL schema file for database initialization (like the original project)
-- **Health Checks**: Built-in health monitoring endpoints
-- **User Authentication**: Complete user signup, login, logout, and session management
-- **User Management**: Profile updates, user deletion with authorization controls
-- **Session Management**: Secure session handling with token-based authentication
-- **Authorization**: Role-based access control with admin privileges
-- **Testing**: Comprehensive test suite including authentication and user management tests
-- **Environment Config**: `.env` file support for configuration
-- **Collaborative**: Multiple developers can add features without conflicts
+We think creating a database schema for fractionalised ownership of real world assets will solve the problem of tracking, trading, and reporting asset fractions at scale.
 
-## 📁 Project Structure
+**We'll know we've succeeded if:**
+- Users can create assets, divide them into fractions, and trade them reliably
+- The system maintains a clear ledger of ownership history and asset values (whole and fractional) at any point in time
+- Queries remain performant even as the number of assets and trades grows large
 
-```
-provision_it_v2/
-├── app/
-│   ├── __init__.py            # App factory with Blueprint auto-discovery
-│   ├── models.py              # SQLAlchemy models matching schema.sql
-│   ├── decorators.py          # Authentication and validation decorators
-│   ├── controllers/           # MVC Controllers
-│   │   ├── auth_controller.py # Authentication controller
-│   │   └── user_controller.py # User management controller
-│   ├── services/              # MVC Services (business logic)
-│   │   ├── auth_service.py    # Authentication service
-│   │   └── user_service.py    # User management service
-│   ├── views/                 # MVC Views (response formatting)
-│   │   ├── auth_view.py       # Authentication view
-│   │   └── user_view.py       # User management view
-│   └── routes/                # URL routing
-│       ├── auth.py            # Authentication endpoints
-│       ├── users.py           # User management endpoints
-│       └── health.py          # Health check endpoints
-├── tests/
-│   ├── test_db.py             # Database connectivity tests
-│   └── test_user_api.py       # Authentication and user management tests
-├── config.py                  # Configuration management
-├── schema_postgres.sql        # Database schema with tables, functions, triggers
-├── import_postgres.sql        # Database insert data
-├── init_db_postgres.py        # Database initialization
-├── run.py                     # Application entry point
-├── requirements.txt           # Dependencies
-├── .env                       # Environment configuration template
-├── setup_env.sh               # Automated setup script for Unix/Linux/macOS
-├── setup_env.bat              # Automated setup script for Windows
-└── README.md                  # This file
-```
+## Project Scope
 
-## 🚀 Quick Start
+### Must Have
+- Database schema for assets, fractions, holdings, users, and transactions
+- Ability to trade fractions between owners with real-time updates
+- Ownership ledger to view history and snapshots
+- Asset valuation reporting (whole + fractional)
+- Platform manager role for approving assets and setting fraction counts
 
-### Option 1: Automated Setup (Recommended)
+### Nice to Have
+- Support for multiple asset categories (property, collectibles, etc.)
+- Query optimization and performance reports
+- Performance/stress testing framework
+- Basic UI with light/dark mode
+- API layer with OpenAPI routes
+- User authentication & activity tracking
 
-#### For Unix/Linux/macOS:
-```bash
-# Clone or copy the provision_it_v2 directory
-cd provision_it_v2
+### Not in Scope
+- Real-time price feeds and external market integration
+- Guest user roles
+- Advanced trading features (bidding/auctions)
+- Blockchain/tokenisation implementation
 
-# Run the automated setup script
-./setup_env.sh
-```
+<hr/>
 
-#### For Windows:
-```cmd
-REM Clone or copy the provision_it_v2 directory
-cd provision_it_v2
+## Dependencies
+Before cloning and attempting to run this code, you will need:
+- Python 3.8+
+- PostgreSQL 12+
+- Git (Optional, repo can also be downloaded as .zip)
+- Virtual Environment (venv)
 
-REM Run the automated setup script
-setup_env.bat
-```
+<br/>
 
-The setup scripts will automatically:
-- ✅ Check Python version (3.8+ required)
-- ✅ Create virtual environment
-- ✅ Install all dependencies
-- ✅ **Create .env file with database configuration** (interactive prompts)
-- ✅ Generate secure secret key automatically
-- ✅ Interactive database configuration prompts
-- ✅ Test database connection (if configured)
-- ✅ Initialize database (optional)
-- ✅ Run tests (optional)
+## Getting Started
 
-### Option 2: Manual Setup
+This project provides a complete database schema and API implementation for fractionalized real-world asset management, developed for Provision-it.
 
-#### 1. Setup Environment
+1. Clone this repo to your device.
+2. Run the automated setup script:
+   - **macOS/Linux**: `./setup_env.sh`
+   - **Windows**: `setup_env.bat`
+3. Create a PostgreSQL database and configure your `.env` file with database settings
+4. Initialize the database schema and data: `python init_db_postgres.py`
+5. Start the application: `python run.py` or `flask run`
+6. Access the application at `http://localhost:5001`
 
-```bash
-# Clone or copy the provision_it_v2 directory
-cd provision_it_v2
+<br/>
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+## Deployment
 
-# Install dependencies
-pip install -r requirements.txt
-```
+You can deploy this application to any hosting platform of your choice. For production deployment:
 
-#### 2. Configure Database
+1. Configure production environment variables in `.env`
+2. Set up PostgreSQL database on your hosting platform
+3. Install dependencies: `pip install -r requirements.txt`
+4. Initialize database: `python init_db_postgres.py`
+5. Use a production WSGI server like Gunicorn: `gunicorn -w 4 -b 0.0.0.0:5001 run:app`
 
-```bash
-# Create/Edit .env file with your database settings
-# DATABASE_URL=postgresql://username:password@localhost:5432/api_backbone
+For detailed deployment instructions, see [Deployment.md](Document/Deployment.md).
 
-# OR use the automated setup scripts which create .env interactively
-```
+<br/>
 
-#### 3. Initialize Database
+## Features
 
-```bash
-# 1. Create database
-createdb your_database_name
+<details>
+  <summary>User Management</summary>
+  
+  * User registration and authentication
+  * Profile management
+  * Session handling and security
+  * User portfolio tracking
+</details>
 
-# 2. Run initialization
-python init_db_postgres.py
+<details>
+  <summary>Admin Panel</summary>
+  
+  * Adding new assets
+  * Modifying existed assets value
+  * Assets metadata and last updated value
+</details>
 
-# 3. Delete database
-dropdb your_database_name
+<details>
+  <summary>Asset Management</summary>
+  
+  * Real-world asset registration and tracking
+  * Asset value history and monitoring
+  * Asset metadata
+  * Fractional ownership structure
+</details>
 
-# 3.1 kill all database connection of database
-psql -U your_username -d postgres
+<details>
+  <summary>Trading System</summary>
+  
+  * Buy and sell asset fractions
+  * Offer creation and management
+  * Transaction processing and history
+</details>
 
--- Kill all connections to your_database
-SELECT pg_terminate_backend(pg_stat_activity.pid)
-FROM pg_stat_activity
-WHERE pg_stat_activity.datname = 'provision_it_v2'
-  AND pid <> pg_backend_pid();
-```
+<details>
+  <summary>Portfolio Management</summary>
+  
+  * User portfolio tracking
+  * Fraction ownership management
+  * Transaction history
+  * Value calculations and reporting
+</details>
 
-#### 4. Run the Application
+<br/>
 
-```bash
-# Development server
-python run.py
+## Tech Stack
 
-# Or using Flask CLI
-flask run
-```
+- **Database Schema**: PostgreSQL with comprehensive fractionalized asset management
+- Backend Framework: Flask
+- Database: PostgreSQL
+- ORM: SQLAlchemy
+- Authentication: Flask-based
+- Testing: Pytest, Playwright (E2E), Jest (Frontend)
+- CI: GitHub Actions
 
-The API will be available at `http://127.0.0.1:5001`
+<br/>
 
-## 🔧 Interactive .env Configuration
+## Project Structure
 
-When you run the setup scripts, they will prompt you for database configuration:
+### Backend Architecture
 
 ```
-[INFO] Configuring database settings...
-Database host [localhost]: 
-Database port [5432]: 
-Database name [provision_it_v2]: 
-Database user [postgres]: 
-Database password: 
-[SUCCESS] .env file created with database configuration
-[INFO] Database URL: postgresql://postgres:***@localhost:5432/provision_it_v2
+app/
+├── controllers/         # MVC Controllers
+├── services/            # MVC Services (business logic)
+├── views/               # MVC Views (response formatting)
+├── routes/              # URL routing with Blueprint auto-discovery
+├── models.py            # SQLAlchemy models
+├── database.py          # Database configuration
+└── decorators.py        # Authentication and validation decorators
 ```
 
-**Features:**
-- ✅ **Default values** provided for all fields (just press Enter to use defaults)
-- ✅ **Secure password input** (password is hidden while typing)
-- ✅ **Automatic secret key generation** using Python's `secrets` module
-- ✅ **Complete .env file creation** with all necessary variables
-- ✅ **Backup existing .env** files automatically
+### Frontend
 
-## 🔍 Health Checks
+```
+frontend/
+├── *.html              # HTML templates for web interface
+├── common.css          # Styling and layout
+└── Icons/              # Application icons and assets
+```
 
-The application includes several health check endpoints:
+### Database Schema Files
 
-- `GET /health` - Basic health status
-- `GET /health/db` - Database connectivity check
-- `GET /health/detailed` - Comprehensive system status
+```
+├── schema_postgres.sql      # Main database schema with tables, functions, triggers
+├── import_postgres.sql      # Initial data import for testing
+├── fix_sequences.sql        # Fix sequence synchronization issues
+└── init_db_postgres.py      # Database initialization script
+```
 
-## 🧪 Testing
+### Core Application Files
+
+```
+├── run.py                  # Application entry point
+├── run_tests.py            # Comprehensive test runner
+├── config.py               # Configuration management
+├── requirements.txt        # Python dependencies
+└── .env                    # Environment configuration
+```
+
+### Setup Scripts
+
+```
+├── setup_env.sh            # Automated setup script for Unix/Linux/macOS
+└── setup_env.bat           # Automated setup script for Windows
+```
+
+### Testing
+
+```
+test/
+├── tests/             # Comprehensive test suite
+│   ├── E2E/           # End-to-end tests with Playwright
+│   ├── integration/   # Integration tests
+│   ├── Jest/          # Frontend JavaScript tests
+│   └── unit/          # Unit tests
+└── test_database/     # Testing database utilities
+```
+
+<br/>
+
+## API Documentation
+
+The application provides RESTful APIs for all major functionality:
+
+- **Authentication**: User registration, login, profile management
+- **Assets**: Asset CRUD operations, value tracking
+- **Fractions**: Fractional ownership management
+- **Trading**: Buy/sell operations, offer management
+- **Portfolio**: User portfolio tracking and management
+- **Transactions**: Transaction history and processing
+
+For detailed API documentation, see [API_DOCUMENTATION.md](Document/API_DOCUMENTATION.md).
+
+<br/>
+
+## Database Schema
+
+The core of this project is a comprehensive PostgreSQL database schema designed specifically for fractionalized real-world asset management. The schema includes the following main entities:
+
+- **Users**: User accounts and profiles for asset owners and traders
+- **Assets**: Real-world assets available for fractionalization (properties, collectibles, etc.)
+- **Fractions**: Fractional ownership units representing portions of assets
+- **Transactions**: Complete buy/sell transaction records with ownership transfers
+- **Offers**: Trading offers and bids for asset fractions
+- **AssetValueHistory**: Historical asset value tracking for both whole and fractional valuations
+- **Portfolios**: User portfolio tracking and management
+
+This schema enables reliable tracking of ownership history, real-time trading capabilities, and comprehensive reporting at scale.
+
+For detailed schema information, see `schema_postgres.sql` and [ER_diagram.png](Document/ER_diagram.png).
+
+<br/>
+
+## Testing
+
+Run the comprehensive test suite:
 
 ```bash
 # Run all tests
-pytest
+python run_tests.py
 
-# Run with verbose output
-pytest -v
-
-# Run specific test file
-pytest tests/test_db.py
+# Run specific test categories
+python run_tests.py --unit              # Unit tests only
+python run_tests.py --integration       # Integration tests only
+python run_tests.py --e2e --auto-flask  # End-to-end tests
+python run_tests.py --coverage          # With coverage report
+python run_tests.py --verbose           # With more details
 ```
 
-## 🗄️ Database Initialization
+<br/>
 
-The API backbone uses the same database initialization approach as the original project:
+## Health Checks
 
-### Schema-Based Initialization
+The application includes several health check endpoints:
 
-Instead of using `db.create_all()`, the backbone executes the `schema_postgres.sql` file which includes:
+- `GET /health` - Basic application health
+- `GET /health/db` - Database connectivity check
+- `GET /health/detailed` - Comprehensive system status
 
-- **Tables**: Users, Assets, Fractions, Ownership, Transactions, ValueHistory
-- **Functions**: Manager approval checks, fraction value calculations
-- **Triggers**: Automatic fraction value updates, manager approval validation
-- **Indexes**: Performance optimization indexes
+<br/>
 
-### Database Schema
-
-The schema includes the complete fractional ownership platform structure:
-
-- **Users**: Authentication and authorization
-- **Assets**: Fractional ownership assets
-- **Fractions**: Individual asset fractions
-- **Transactions**: Fraction trading records
-
-## 🔧 Adding New Features
-
-### Adding New API Routes
-
-1. Create a new Python file in `app/routes/` (e.g., `users.py`)
-2. Define a Blueprint named `bp`:
-
-```python
-from flask import Blueprint, jsonify
-from app.models import User
-
-bp = Blueprint('users', __name__)
-
-@bp.route('/users')
-def get_users():
-    users = User.query.all()
-    return jsonify([user.to_dict() for user in users])
-
-@bp.route('/users/<int:user_id>')
-def get_user(user_id):
-    user = User.query.get_or_404(user_id)
-    return jsonify(user.to_dict())
-```
-
-3. The Blueprint will be automatically discovered and registered!
-
-### Adding New Models
-
-The models in `app/models.py` already match the schema structure. To add new models:
-
-1. Add the table to `schema_postgres.sql`
-2. Add the corresponding SQLAlchemy model to `app/models.py`
-3. Update the `init_db` process if needed
-
-## 🛠️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -254,275 +272,39 @@ The models in `app/models.py` already match the schema structure. To add new mod
 | `FLASK_DEBUG` | Debug mode | `true` |
 | `FLASK_HOST` | Server host | `127.0.0.1` |
 | `FLASK_PORT` | Server port | `5001` |
-| `SECRET_KEY` | Flask secret key | `dev-secret-key-change-in-production` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://localhost/api_backbone` |
+| `SECRET_KEY` | Flask secret key | Generated automatically |
+| `DATABASE_URL` | PostgreSQL connection string | Configured during setup |
 
-### Configuration Classes
+<br/>
 
-- `DevelopmentConfig` - Development settings
-- `ProductionConfig` - Production settings  
-- `TestingConfig` - Testing settings
-
-## 🤝 Collaborative Development
-
-### For New Team Members
-
-1. **Clone the repository**
-2. **Copy `.env.example` to `.env`** and configure your database
-3. **Install dependencies**: `pip install -r requirements.txt`
-4. **Initialize database**: `flask init-db`
-5. **Run tests**: `pytest` to verify setup
-6. **Start development**: `python run.py`
-
-### Adding Features
-
-- **New APIs**: Drop a `.py` file in `app/routes/` with a Blueprint named `bp`
-- **New Models**: Add to `app/models.py` and update `schema_postgres.sql`
-- **New Tests**: Add to `tests/` directory
-- **No core file changes needed** for new API routes!
-
-## 📝 API Documentation
-
-### Authentication Endpoints
-
-#### POST /api/auth/signup
-Create a new user account.
-
-**Request Body:**
-```json
-{
-  "username": "testuser",
-  "email": "test@example.com", 
-  "password": "password123",
-  "is_manager": false
-}
-```
-
-**Response (201):**
-```json
-{
-  "user": {
-    "user_id": 1,
-    "user_name": "testuser",
-    "email": "test@example.com",
-    "is_manager": false,
-    "created_at": "2024-01-01T00:00:00"
-  },
-  "session": {
-    "user_id": 1,
-    "username": "testuser",
-    "session_token": "abc123...",
-    "is_admin": false
-  },
-  "message": "User registered successfully",
-  "status": "success"
-}
-```
-
-#### POST /api/auth/login
-Authenticate user and create session.
-
-**Request Body:**
-```json
-{
-  "username": "testuser",
-  "password": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "user": {
-    "user_id": 1,
-    "user_name": "testuser",
-    "email": "test@example.com",
-    "is_manager": false,
-    "created_at": "2024-01-01T00:00:00"
-  },
-  "session": {
-    "user_id": 1,
-    "username": "testuser", 
-    "session_token": "abc123...",
-    "is_admin": false
-  },
-  "message": "Login successful",
-  "status": "success"
-}
-```
-
-#### POST /api/auth/logout
-Logout current user and clear session.
-
-**Response (200):**
-```json
-{
-  "message": "Logout successful",
-  "status": "success"
-}
-```
-
-#### GET /api/auth/me
-Get current logged-in user information.
-
-**Response (200):**
-```json
-{
-  "user": {
-    "user_id": 1,
-    "user_name": "testuser",
-    "email": "test@example.com",
-    "is_manager": false,
-    "created_at": "2024-01-01T00:00:00"
-  },
-  "status": "success"
-}
-```
-
-### User Management Endpoints
-
-#### PUT /api/users/{user_id}
-Update user profile. Requires authentication and ownership or admin privileges.
-
-**Request Body:**
-```json
-{
-  "user_name": "newusername",
-  "email": "newemail@example.com",
-  "password": "newpassword123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "user": {
-    "user_id": 1,
-    "user_name": "newusername",
-    "email": "newemail@example.com",
-    "is_manager": false,
-    "created_at": "2024-01-01T00:00:00"
-  },
-  "message": "User updated successfully",
-  "status": "success"
-}
-```
-
-#### DELETE /api/users/{user_id}
-Delete user account. Requires authentication and ownership or admin privileges.
-
-**Response (200):**
-```json
-{
-  "message": "User deleted successfully",
-  "status": "success"
-}
-```
-
-### Health Endpoints
-
-#### GET /health
-Basic health check.
-
-## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_user_api.py
-
-# Run with verbose output
-pytest -v
-
-# Run with coverage
-pytest --cov=app
-```
-
-### Test Demo Script
-
-A demo script is included to test the authentication endpoints:
-
-```bash
-# Make sure the Flask server is running first
-python run.py
-
-# In another terminal, run the demo
-python run_tests.py --unit --database
-```
-
-The demo script will test:
-- User signup (including duplicate validation)
-- User login and session creation
-- Profile updates
-- Authorization checks
-- Logout functionality
-- Error handling
-
-### Test Coverage
-
-The test suite covers:
-- ✅ User signup with validation
-- ✅ User login and authentication
-- ✅ Session management
-- ✅ Profile updates with authorization
-- ✅ User deletion with authorization
-- ✅ Admin privilege checks
-- ✅ Error handling and edge cases
-- ✅ Unauthorized access prevention
-
-## 🐛 Troubleshooting
-
-### Database Connection Issues
-
-1. **Check PostgreSQL is running**: `pg_ctl status`
-2. **Verify connection string**: Check `DATABASE_URL` in `.env`
-3. **Test connection**: `psql $DATABASE_URL`
-4. **Check firewall**: Ensure port 5432 is accessible
-
-### Schema Initialization Issues
-
-1. **Check schema.sql exists**: `ls -la schema_postgres.sql`
-2. **Verify SQL syntax**: Test with `psql -f schema_postgres.sql`
-3. **Check permissions**: Ensure database user has CREATE privileges
-4. **Review logs**: Check Flask application logs for SQL errors
-
-### Import Errors
-
-1. **Activate virtual environment**: `source venv/bin/activate`
-2. **Install dependencies**: `pip install -r requirements.txt`
-3. **Check Python path**: Ensure you're in the project root
-
-### Blueprint Not Registered
-
-1. **Check file name**: Must end with `.py`
-2. **Check Blueprint name**: Must be named `bp`
-3. **Check syntax**: No import errors in the file
-4. **Restart server**: Blueprints are loaded at startup
-
-## 🔄 Migration from Original Project
-
-This backbone is designed to be compatible with the original Provision-it project:
-
-1. **Same Schema**: Uses identical database structure
-2. **Same Models**: SQLAlchemy models match the original
-3. **Same Functions**: PostgreSQL functions and triggers included
-4. **Same Data**: Can import existing CSV data using the same process
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Add your changes
 4. Add tests for new functionality
 5. Submit a pull request
+
+<br/>
+
+## License
+
+This project is open source and available under the [MIT License](./LICENSE).
+
+© 2025 Group 12 – Provision IT (COMP30022, University of Melbourne)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
+<br/>
+
+## Links
+
+- [Deployment Guide](Document/Deployment.md)
+- [API Documentation](Document/API_DOCUMENTATION.md)
+- [Source Code](https://github.com/Evelyn-0yi/Provision-it)
+
+**Client**: Provision-it  
+**Project**: Fractionalized Real-World Assets Database Schema
 
 ---
 

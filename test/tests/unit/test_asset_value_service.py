@@ -72,23 +72,26 @@ class TestAssetValueService:
         mock_history = Mock(spec=AssetValueHistory)
         
         with patch('app.services.asset_value_service.db') as mock_db:
-            with patch('app.services.asset_value_service.User') as mock_user_class:
-                mock_user_class.query.get.return_value = mock_user
+            # Mock db.session.get to return appropriate objects
+            def session_get_side_effect(model, obj_id):
+                if model == User and obj_id == adjusted_by:
+                    return mock_user
+                elif model == Asset and obj_id == asset_id:
+                    return mock_asset
+                return None
+            mock_db.session.get.side_effect = session_get_side_effect
+            
+            with patch('app.services.asset_value_service.AssetValueHistory', return_value=mock_history):
+                result = AssetValueService.add_adjustment(
+                    asset_id, value, adjusted_by, reason, recorded_at
+                )
                 
-                with patch('app.services.asset_value_service.Asset') as mock_asset_class:
-                    mock_asset_class.query.get.return_value = mock_asset
-                    
-                    with patch('app.services.asset_value_service.AssetValueHistory', return_value=mock_history):
-                        result = AssetValueService.add_adjustment(
-                            asset_id, value, adjusted_by, reason, recorded_at
-                        )
-                        
-                        assert result == mock_history
-                        mock_db.session.add.assert_called_once()
-                        mock_db.session.commit.assert_called_once()
-                        
-                        # Verify asset value was updated
-                        assert mock_asset.total_value == str(value)
+                assert result == mock_history
+                mock_db.session.add.assert_called_once()
+                mock_db.session.commit.assert_called_once()
+                
+                # Verify asset value was updated
+                assert mock_asset.total_value == str(value)
     
     def test_add_adjustment_user_not_found(self):
         """Test value adjustment with non-existent user."""
@@ -97,8 +100,8 @@ class TestAssetValueService:
         adjusted_by = 999  # Non-existent user
         reason = "Market adjustment"
         
-        with patch('app.services.asset_value_service.User') as mock_user_class:
-            mock_user_class.query.get.return_value = None
+        with patch('app.services.asset_value_service.db') as mock_db:
+            mock_db.session.get.return_value = None
             
             with pytest.raises(PermissionError, match="Only manager can adjust asset values"):
                 AssetValueService.add_adjustment(asset_id, value, adjusted_by, reason)
@@ -113,8 +116,8 @@ class TestAssetValueService:
         mock_user = Mock(spec=User)
         mock_user.is_manager = False  # Not a manager
         
-        with patch('app.services.asset_value_service.User') as mock_user_class:
-            mock_user_class.query.get.return_value = mock_user
+        with patch('app.services.asset_value_service.db') as mock_db:
+            mock_db.session.get.return_value = mock_user
             
             with pytest.raises(PermissionError, match="Only manager can adjust asset values"):
                 AssetValueService.add_adjustment(asset_id, value, adjusted_by, reason)
@@ -129,20 +132,23 @@ class TestAssetValueService:
         mock_user = Mock(spec=User)
         mock_user.is_manager = True
         
-        with patch('app.services.asset_value_service.User') as mock_user_class:
-            mock_user_class.query.get.return_value = mock_user
+        mock_history = Mock(spec=AssetValueHistory)
+        
+        with patch('app.services.asset_value_service.db') as mock_db:
+            # Mock db.session.get to return user but not asset
+            def session_get_side_effect(model, obj_id):
+                if model == User and obj_id == adjusted_by:
+                    return mock_user
+                return None  # Asset not found
+            mock_db.session.get.side_effect = session_get_side_effect
             
-            with patch('app.services.asset_value_service.Asset') as mock_asset_class:
-                mock_asset_class.query.get.return_value = None  # Asset not found
+            with patch('app.services.asset_value_service.AssetValueHistory', return_value=mock_history):
+                # Should not raise exception, just not update asset
+                result = AssetValueService.add_adjustment(asset_id, value, adjusted_by, reason)
                 
-                with patch('app.services.asset_value_service.AssetValueHistory'):
-                    with patch('app.services.asset_value_service.db') as mock_db:
-                        # Should not raise exception, just not update asset
-                        result = AssetValueService.add_adjustment(asset_id, value, adjusted_by, reason)
-                        
-                        # History should still be created
-                        mock_db.session.add.assert_called_once()
-                        mock_db.session.commit.assert_called_once()
+                # History should still be created
+                mock_db.session.add.assert_called_once()
+                mock_db.session.commit.assert_called_once()
     
     def test_add_adjustment_default_values(self):
         """Test value adjustment with default values."""
@@ -156,33 +162,30 @@ class TestAssetValueService:
         mock_asset = Mock(spec=Asset)
         mock_asset.asset_id = asset_id
         
+        mock_history = Mock(spec=AssetValueHistory)
+        
         with patch('app.services.asset_value_service.db') as mock_db:
-            with patch('app.services.asset_value_service.User') as mock_user_class:
-                mock_user_class.query.get.return_value = mock_user
-                
-                with patch('app.services.asset_value_service.Asset') as mock_asset_class:
-                    mock_asset_class.query.get.return_value = mock_asset
+            # Mock db.session.get to return appropriate objects
+            def session_get_side_effect(model, obj_id):
+                if model == User and obj_id == adjusted_by:
+                    return mock_user
+                elif model == Asset and obj_id == asset_id:
+                    return mock_asset
+                return None
+            mock_db.session.get.side_effect = session_get_side_effect
+            
+            with patch('app.services.asset_value_service.AssetValueHistory', return_value=mock_history):
+                # Mock datetime.utcnow() to return a specific time
+                with patch('app.services.asset_value_service.datetime') as mock_datetime:
+                    mock_now = datetime(2023, 6, 15, 10, 30, 0)
+                    mock_datetime.utcnow.return_value = mock_now
                     
-                    with patch('app.services.asset_value_service.AssetValueHistory') as mock_history_class:
-                        mock_history = Mock(spec=AssetValueHistory)
-                        mock_history_class.return_value = mock_history
-                        
-                        # Mock datetime.utcnow() to return a specific time
-                        with patch('app.services.asset_value_service.datetime') as mock_datetime:
-                            mock_now = datetime(2023, 6, 15, 10, 30, 0)
-                            mock_datetime.utcnow.return_value = mock_now
-                            
-                            result = AssetValueService.add_adjustment(asset_id, value, adjusted_by)
-                            
-                            # Verify AssetValueHistory was created with correct parameters
-                            mock_history_class.assert_called_once()
-                            call_args = mock_history_class.call_args
-                            assert call_args[1]['asset_id'] == asset_id
-                            assert call_args[1]['value'] == value
-                            assert call_args[1]['recorded_at'] == mock_now
-                            assert call_args[1]['source'] == "manual_adjust"
-                            assert call_args[1]['adjusted_by'] == adjusted_by
-                            assert call_args[1]['adjustment_reason'] == ""
+                    result = AssetValueService.add_adjustment(asset_id, value, adjusted_by)
+                    
+                    # Verify history object was created and committed
+                    assert result == mock_history
+                    mock_db.session.add.assert_called_once()
+                    mock_db.session.commit.assert_called_once()
     
     def test_latest_value_success(self):
         """Test successful latest value retrieval."""

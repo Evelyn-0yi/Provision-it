@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin Panel - Asset Trading Platform</title>
+  <link rel="icon" type="image/png" href="/frontend/Icons/pvit90.png">
   <link rel="stylesheet" href="common.css">
   <style>
     .user-selection-item:hover {
@@ -21,7 +22,6 @@
       <div class="nav-content">
         <h1>Admin Panel</h1>
         <div class="nav-links">
-          <a href="dashboard.html">Dashboard</a>
           <a href="browsing.html">Browse Assets</a>
           <a href="trading.html">Trading</a>
           <a href="portfolio.html">My Assets</a>
@@ -73,8 +73,10 @@
   <!-- Add Asset Modal -->
   <div id="addAssetModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 30px; border-radius: 14px; width: 600px; max-width: 90vw; max-height: 90vh; overflow-y: auto;">
-      <h3>Create New Asset with Initial Fraction</h3>
-      <p class="text-muted" style="margin-bottom: 20px;">This will create an asset and assign the initial fraction to an admin user.</p>
+      <div class="row modal-header-sticky">
+        <h3 id="modalAssetName">Create New Asset</h3>
+        <button onclick="hideAddAssetModal()" class="small">Close</button>
+      </div>
       
       <form id="addAssetForm">
           <div class="row">
@@ -83,7 +85,7 @@
             <input type="text" id="newAssetName" required placeholder="Enter asset name">
           </div>
           <div class="col">
-            <label>Total Value (¥)</label>
+            <label>Total Value ($)</label>
             <input type="number" id="newAssetTotalValue" required min="0" step="0.01" placeholder="0.00">
         </div>
       </div>
@@ -93,8 +95,8 @@
         
           <div class="row">
             <div class="col">
-            <label>Available Fractions</label>
-            <input type="number" id="newAssetTotalUnits" required min="1" placeholder="Maximum number of fractions" onchange="validateAssetUnits()">
+            <label>Total Units (Available Fractions)</label>
+            <input type="number" id="newAssetTotalUnits" required min="1" placeholder="Total number of fractions" oninput="validateAssetUnits()">
             </div>
             <div class="col">
             <label>Initial Fraction Owner</label>
@@ -109,22 +111,21 @@
         
         <div class="row">
           <div class="col">
-            <label>Minimum Number of Fractions</label>
-            <input type="number" id="newAssetMinUnits" required min="1" placeholder="1" onchange="validateAssetUnits()">
+            <label>Minimum Units per Fraction</label>
+            <input type="number" id="newAssetMinUnits" required min="1" placeholder="1" oninput="validateAssetUnits()">
           </div>
           <div class="col">
-            <label>Maximum Number of Fraction</label>
-            <input type="number" id="newAssetMaxUnits" required min="1" placeholder="100" onchange="validateAssetUnits()">
+            <label>Maximum Units per Fraction</label>
+            <input type="number" id="newAssetMaxUnits" required min="1" placeholder="100" oninput="validateAssetUnits()">
         </div>
       </div>
+        <div id="unitsValidationError" style="color: #f44336; font-size: 14px; margin-top: 5px; display: none;"></div>
         
         <div class="card" style="background: var(--background); margin: 15px 0; padding: 15px;">
-          <h4 style="margin: 0 0 10px 0; color: var(--accent);">Unit Constraints</h4>
+          <h4 style="margin: 0 0 10px 0; color: var(--accent);">Initial Fraction Details</h4>
           <p class="text-muted" style="margin: 0; font-size: 14px;">
-            <strong>Validation Rules:</strong><br>
-            • Minimum Units ≤ Total Units ≤ Maximum Units<br>
-            • The initial fraction will be created with all available units and assigned to the selected admin user.<br>
-            • Value per unit will be calculated as: Total Value ÷ Total Units
+            The initial fraction will be created with all available units and assigned to the selected admin user.
+            Value per unit will be calculated as: Total Value ÷ Total Units
           </p>
         </div>
         
@@ -195,7 +196,7 @@
           <p style="margin: 0;"><strong>Total Units:</strong> <span id="modifyTotalUnits">-</span></p>
         </div>
         
-        <label>New Total Value (¥) <span style="color: red;">*</span></label>
+        <label>New Total Value ($) <span style="color: red;">*</span></label>
         <input type="number" id="modifyNewValue" required min="0" step="0.01" placeholder="Enter new total value" style="border: 2px solid #ddd; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box;" oninput="validateNewValue(this)">
         <small style="color: #666; font-size: 12px;">Enter the NEW total value for this asset (not the current value).</small>
         <div id="newValueError" style="color: red; font-size: 12px; margin-top: 5px; display: none;"></div>
@@ -227,7 +228,7 @@
     // Check if user is manager
     if (!user.is_manager) {
       alert('You do not have admin privileges');
-      location.href = 'dashboard.html';
+      location.href = 'browsing.html';
     }
 
     async function fetchAdminData() {
@@ -291,7 +292,7 @@
                 <td>${a.asset_id}</td>
                 <td>${a.asset_name}</td>
                 <td>${a.total_unit}</td>
-                <td>¥${parseFloat(a.total_value).toLocaleString()}</td>
+                <td>$${parseFloat(a.total_value).toLocaleString()}</td>
                 <td>${new Date(a.created_at).toLocaleDateString()}</td>
                 <td>
                   <span class="text-muted">View only</span>
@@ -472,6 +473,52 @@
     function hideAddAssetModal() {
       document.getElementById('addAssetModal').style.display = 'none';
       document.getElementById('addAssetForm').reset();
+      document.getElementById('unitsValidationError').style.display = 'none';
+    }
+
+    function validateAssetUnits() {
+      const totalUnits = parseInt(document.getElementById('newAssetTotalUnits').value) || 0;
+      const minUnits = parseInt(document.getElementById('newAssetMinUnits').value) || 0;
+      const maxUnits = parseInt(document.getElementById('newAssetMaxUnits').value) || 0;
+      const errorDiv = document.getElementById('unitsValidationError');
+      
+      // Clear previous errors
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+      
+      // Only validate if all fields have values
+      if (!totalUnits || !minUnits || !maxUnits) {
+        return;
+      }
+      
+      // Validate constraints
+      if (minUnits < 1) {
+        errorDiv.textContent = '⚠️ Minimum units must be at least 1';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      if (maxUnits < minUnits) {
+        errorDiv.textContent = '⚠️ Maximum units per fraction cannot be less than minimum units per fraction';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      if (minUnits > totalUnits) {
+        errorDiv.textContent = '⚠️ Minimum units per fraction cannot be greater than total units';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      
+      // All validations passed - provide helpful feedback
+      errorDiv.style.color = '#4CAF50';
+      if (maxUnits >= totalUnits) {
+        errorDiv.textContent = '✓ Valid configuration: Single fraction can hold all units';
+      } else {
+        const minFractions = Math.ceil(totalUnits / maxUnits);
+        errorDiv.textContent = `✓ Valid configuration: Asset will require at least ${minFractions} fraction(s)`;
+      }
+      errorDiv.style.display = 'block';
     }
 
     // Asset Modify Modal Functions
@@ -495,7 +542,7 @@
         window.adminData.assets.forEach(asset => {
           const option = document.createElement('option');
           option.value = asset.asset_id;
-          option.textContent = `${asset.asset_name} (Current: ¥${parseFloat(asset.total_value).toLocaleString()})`;
+          option.textContent = `${asset.asset_name} (Current: $${parseFloat(asset.total_value).toLocaleString()})`;
           option.setAttribute('data-asset-data', JSON.stringify(asset));
           select.appendChild(option);
           console.log('Added asset option:', asset.asset_name, 'ID:', asset.asset_id);
@@ -586,13 +633,13 @@
         
         // Update asset information display
         document.getElementById('modifyAssetName').textContent = assetData.asset_name;
-        document.getElementById('modifyCurrentValue').textContent = `¥${parseFloat(assetData.total_value).toLocaleString()}`;
+        document.getElementById('modifyCurrentValue').textContent = `$${parseFloat(assetData.total_value).toLocaleString()}`;
         document.getElementById('modifyTotalUnits').textContent = assetData.total_unit;
         
         // Clear and set the new value input to current value as starting point
         const newValueInput = document.getElementById('modifyNewValue');
         newValueInput.value = ''; // Clear first
-        newValueInput.placeholder = `Current: ¥${parseFloat(assetData.total_value).toLocaleString()}`;
+        newValueInput.placeholder = `Current: $${parseFloat(assetData.total_value).toLocaleString()}`;
         newValueInput.focus(); // Focus on the input so user can type
         
         // Add real-time validation
@@ -781,7 +828,7 @@
         console.log('Asset modification completed successfully');
         hideAssetModifyModal();
         refreshData();
-        showMessage(`Asset value updated successfully to ¥${newValue.toLocaleString()}`, true);
+        showMessage(`Asset value updated successfully to $${newValue.toLocaleString()}`, true);
         
       } catch (error) {
         console.error('Error modifying asset:', error);
@@ -799,68 +846,65 @@
       
       console.log('Asset creation started...');
       
+      // Get asset description from form
+      const assetDescription = document.getElementById('newAssetDescription').value.trim();
+      
+      // Prepare complete data including description
       const assetData = {
         asset_name: document.getElementById('newAssetName').value,
+        asset_description: assetDescription || null,  // Include description
         total_unit: parseInt(document.getElementById('newAssetTotalUnits').value),
         unit_min: parseInt(document.getElementById('newAssetMinUnits').value),
         unit_max: parseInt(document.getElementById('newAssetMaxUnits').value),
-        total_value: parseFloat(document.getElementById('newAssetTotalValue').value)
+        total_value: parseFloat(document.getElementById('newAssetTotalValue').value),
+        owner_id: parseInt(document.getElementById('newAssetOwner').value),
+        adjusted_by: user.user_id  // Include admin user ID for value history
       };
       
-      const ownerId = document.getElementById('newAssetOwner').value;
-      
       console.log('Asset data:', assetData);
-      console.log('Owner ID:', ownerId);
       
-      if (!ownerId) {
+      if (!assetData.owner_id) {
         showMessage('Please select a user to own the initial fraction', false);
         return;
       }
       
       // Validate form data
-      if (assetData.unit_min > assetData.unit_max) {
-        showMessage('Minimum units cannot be greater than maximum units', false);
+      if (assetData.unit_min < 1) {
+        showMessage('Minimum units must be at least 1', false);
         return;
       }
       
-      if (assetData.total_unit < assetData.unit_min) {
-        showMessage('Total units cannot be less than minimum units', false);
+      if (assetData.unit_max < assetData.unit_min) {
+        showMessage('Maximum units per fraction cannot be less than minimum units per fraction', false);
         return;
       }
       
-      if (assetData.total_unit > assetData.unit_max) {
-        showMessage('Total units cannot be greater than maximum units', false);
+      if (assetData.unit_min > assetData.total_unit) {
+        showMessage('Minimum units per fraction cannot be greater than total units', false);
         return;
       }
       
       try {
-        // Create asset with initial fraction using the new endpoint
-        showMessage('Creating asset with initial fraction...', true);
-        
-        const completeAssetData = {
-          ...assetData,
-          asset_description: document.getElementById('newAssetDescription').value || null,
-          owner_id: parseInt(ownerId),
-          adjusted_by: user.user_id
-        };
-        
+        // Create asset with initial fraction and value history in one call
+        showMessage('Creating asset with initial fraction and value history...', true);
         const response = await fetch(`${API}/assets/with-initial-fraction`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(completeAssetData)
+          body: JSON.stringify(assetData)
         });
         
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || error.error || 'Failed to create asset with initial fraction');
+          throw new Error(error.message || error.error || 'Failed to create asset');
         }
         
         const result = await response.json();
+        console.log('Asset creation result:', result);
         
         // Success!
         hideAddAssetModal();
         refreshData();
-        showMessage(`Asset "${assetData.asset_name}" created successfully with initial fraction assigned to selected user`, true);
+        showMessage(`Asset "${assetData.asset_name}" created successfully with initial fraction and value history`, true);
         
       } catch (error) {
         console.error('Error creating asset:', error);
@@ -905,57 +949,22 @@
       location.href = 'login.html';
     }
 
-    // Real-time validation for asset units
-    function validateAssetUnits() {
-      const totalUnits = parseInt(document.getElementById('newAssetTotalUnits').value) || 0;
-      const minUnits = parseInt(document.getElementById('newAssetMinUnits').value) || 0;
-      const maxUnits = parseInt(document.getElementById('newAssetMaxUnits').value) || 0;
-      
-      const totalUnitsInput = document.getElementById('newAssetTotalUnits');
-      const minUnitsInput = document.getElementById('newAssetMinUnits');
-      const maxUnitsInput = document.getElementById('newAssetMaxUnits');
-      
-      // Reset all field styles
-      totalUnitsInput.style.borderColor = '#ddd';
-      minUnitsInput.style.borderColor = '#ddd';
-      maxUnitsInput.style.borderColor = '#ddd';
-      
-      let hasError = false;
-      
-      // Validate min <= max
-      if (minUnits > 0 && maxUnits > 0 && minUnits > maxUnits) {
-        minUnitsInput.style.borderColor = '#f44336';
-        maxUnitsInput.style.borderColor = '#f44336';
-        hasError = true;
-      }
-      
-      // Validate total >= min (if both are set)
-      if (totalUnits > 0 && minUnits > 0 && totalUnits < minUnits) {
-        totalUnitsInput.style.borderColor = '#f44336';
-        minUnitsInput.style.borderColor = '#f44336';
-        hasError = true;
-      }
-      
-      // Validate total <= max (if both are set)
-      if (totalUnits > 0 && maxUnits > 0 && totalUnits > maxUnits) {
-        totalUnitsInput.style.borderColor = '#f44336';
-        maxUnitsInput.style.borderColor = '#f44336';
-        hasError = true;
-      }
-      
-      // If no errors and all fields have values, show success
-      if (!hasError && totalUnits > 0 && minUnits > 0 && maxUnits > 0) {
-        totalUnitsInput.style.borderColor = '#4CAF50';
-        minUnitsInput.style.borderColor = '#4CAF50';
-        maxUnitsInput.style.borderColor = '#4CAF50';
-      }
-    }
-
     // Event listeners
     document.getElementById('addAssetForm').addEventListener('submit', addAsset);
     document.getElementById('assetModifyForm').addEventListener('submit', modifySelectedAsset);
 
     // Load data on page load
+
+    async function logout() {
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (e) {
+        // swallow network errors; proceed to clear session
+      } finally {
+        try { sessionStorage.clear(); } catch (_) {}
+        location.href = 'login.html';
+      }
+    }
     fetchAdminData();
   </script>
 </body>

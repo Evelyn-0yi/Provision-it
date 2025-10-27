@@ -114,7 +114,7 @@ class UserService:
         Raises:
             ValueError: If uniqueness constraints are violated
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return None
         
@@ -150,7 +150,7 @@ class UserService:
         Returns:
             Dict with success status and message
         """
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return {"success": False, "message": "User not found"}
         

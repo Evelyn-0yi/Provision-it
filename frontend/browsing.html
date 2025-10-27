@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Browse Assets - Asset Trading Platform</title>
+  <link rel="icon" type="image/png" href="/frontend/Icons/pvit90.png">
   <link rel="stylesheet" href="common.css">
 </head>
 <body>
@@ -12,7 +13,6 @@
       <div class="nav-content">
         <h1>Browse Assets</h1>
         <div class="nav-links">
-          <a href="dashboard.html">Dashboard</a>
           <a href="browsing.html" class="active">Browse Assets</a>
           <a href="trading.html">Trading</a>
           <a href="portfolio.html">My Assets</a>
@@ -43,16 +43,7 @@
         <div class="col">
           <input type="text" id="searchInput" placeholder="Search asset name or description..." onkeyup="searchAssets()" style="width: 100%;">
         </div>
-        <div class="col" style="max-width: 200px;">
-          <select id="categoryFilter" onchange="filterAssets()">
-            <option value="all">All Categories</option>
-            <option value="real_estate">Real Estate</option>
-            <option value="stocks">Stocks</option>
-            <option value="commodities">Commodities</option>
-            <option value="crypto">Cryptocurrency</option>
-            <option value="bonds">Bonds</option>
-          </select>
-        </div>
+        <!-- category filter removed -->
         <div class="col" style="max-width: 200px;">
           <select id="sortBy" onchange="sortAssets()">
             <option value="name">Sort by Name</option>
@@ -73,7 +64,7 @@
       <!-- Price Range Filter -->
       <div class="row">
         <div class="col">
-          <label>Price Range (¥)</label>
+          <label>Price Range ($)</label>
           <div class="row">
             <input type="number" id="minPrice" placeholder="Min Price" onchange="filterAssets()" style="width: 48%;">
             <input type="number" id="maxPrice" placeholder="Max Price" onchange="filterAssets()" style="width: 48%;">
@@ -92,32 +83,7 @@
       </div>
     </div>
 
-    <!-- Asset Statistics -->
-    <div class="grid">
-      <div class="card">
-        <h3>Total Assets</h3>
-        <div style="font-size: 24px; font-weight: bold; color: var(--accent);" id="totalAssets">0</div>
-        <p class="text-muted">Investable Assets</p>
-      </div>
-      
-      <div class="card">
-        <h3>Average Price</h3>
-        <div style="font-size: 24px; font-weight: bold;" id="avgPrice">¥0</div>
-        <p class="text-muted">Average Price per Unit</p>
-      </div>
-      
-      <div class="card">
-        <h3>Total Market Value</h3>
-        <div style="font-size: 24px; font-weight: bold;" id="totalMarketValue">¥0</div>
-        <p class="text-muted">Total Value of All Assets</p>
-      </div>
-      
-      <div class="card">
-        <h3>Popular Category</h3>
-        <div style="font-size: 24px; font-weight: bold;" id="topCategory">-</div>
-        <p class="text-muted">Most Popular Investment Category</p>
-      </div>
-    </div>
+    
 
     <!-- Assets Display -->
     <div id="assetsContainer">
@@ -140,7 +106,7 @@
   <!-- Asset Detail Modal -->
   <div id="assetDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card); padding: 30px; border-radius: 14px; width: 600px; max-width: 90vw; max-height: 80vh; overflow-y: auto;">
-      <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div class="row modal-header-sticky">
         <h3 id="modalAssetName">Asset Details</h3>
         <button onclick="hideAssetDetailModal()" class="small">Close</button>
       </div>
@@ -150,8 +116,7 @@
       </div>
       
       <div class="row" style="margin-top: 20px;">
-        <button onclick="quickBuyFromModal()" class="primary col" style="margin-right: 10px;">Quick Buy</button>
-        <button onclick="addToWatchlist()" class="col">Add to Watchlist</button>
+        <button onclick="quickBuyFromModal()" class="primary col">Quick Buy</button>
       </div>
     </div>
   </div>
@@ -170,14 +135,21 @@
     if (user.is_manager) {
       document.getElementById('adminLink').style.display = 'inline-block';
     }
+    if (!user || !user.user_id) {
+      location.href = 'login.html';
+    }
 
     async function fetchAssets() {
       try {
-        const response = await fetch(`${API}/assets`);
-        allAssets = await response.json();
+        // Request more items from the API so the frontend can show/search all assets client-side.
+        // If the backend paginates, ask for a large per_page value.
+        const response = await fetch(`${API}/assets?per_page=1000`);
+        const data = await response.json();
+
+        // The API returns an object like { assets: [...], count: N, status: 'success' }
+        allAssets = Array.isArray(data) ? data : (data.assets || []);
         filteredAssets = [...allAssets];
-        
-        updateStatistics();
+
         displayAssets();
         updatePagination();
       } catch (error) {
@@ -186,17 +158,7 @@
       }
     }
 
-    function updateStatistics() {
-      const totalAssets = allAssets.length;
-      const totalValue = allAssets.reduce((sum, asset) => sum + parseFloat(asset.total_value), 0);
-      const avgPrice = allAssets.length > 0 ? 
-        allAssets.reduce((sum, asset) => sum + (parseFloat(asset.total_value) / parseInt(asset.total_unit)), 0) / allAssets.length : 0;
-      
-      document.getElementById('totalAssets').textContent = totalAssets;
-      document.getElementById('avgPrice').textContent = `¥${avgPrice.toFixed(2)}`;
-      document.getElementById('totalMarketValue').textContent = `¥${totalValue.toLocaleString()}`;
-      document.getElementById('topCategory').textContent = 'Real Estate'; // Mock data
-    }
+    
 
     function displayAssets() {
       const container = document.getElementById('assetsContainer');
@@ -239,7 +201,6 @@
 
     function createAssetCard(asset) {
       const price = parseFloat(asset.total_value) / parseInt(asset.total_unit);
-      const change = (Math.random() * 10 - 5).toFixed(2);
       const category = getAssetCategory(asset);
       
       return `
@@ -248,18 +209,6 @@
             <h4 style="margin: 0;">${asset.asset_name}</h4>
             <span class="badge info">${category}</span>
           </div>
-          
-          <div class="row" style="margin-bottom: 10px;">
-            <div class="col">
-              <div class="text-muted">Unit Price</div>
-              <div style="font-size: 18px; font-weight: bold;">¥${price.toFixed(2)}</div>
-            </div>
-            <div class="col">
-              <div class="text-muted">Change</div>
-              <div class="${change > 0 ? 'text-success' : 'text-error'}">${change > 0 ? '+' : ''}${change}%</div>
-            </div>
-          </div>
-          
           <div class="row" style="margin-bottom: 15px;">
             <div class="col">
               <div class="text-muted">Total Units</div>
@@ -267,13 +216,20 @@
             </div>
             <div class="col">
               <div class="text-muted">Total Value</div>
-              <div>¥${parseFloat(asset.total_value).toLocaleString()}</div>
+              <div>$${parseFloat(asset.total_value).toLocaleString()}</div>
+            </div>
+          </div>
+          <div class="row" style="margin-bottom: 10px;">
+            <div class="col">
+              <div class="text-muted">Unit Price</div>
+              <div style="font-size: 18px; font-weight: bold;">$${price.toFixed(2)}</div>
             </div>
           </div>
           
+          
+          
           <div class="row">
-            <button onclick="event.stopPropagation(); quickBuy(${asset.asset_id})" class="primary small col" style="margin-right: 5px;">Buy</button>
-            <button onclick="event.stopPropagation(); addToWatchlist(${asset.asset_id})" class="small col">Watch</button>
+            <button onclick="event.stopPropagation(); quickBuy(${asset.asset_id})" class="primary small col">Buy</button>
           </div>
         </div>
       `;
@@ -281,7 +237,6 @@
 
     function createAssetRow(asset) {
       const price = parseFloat(asset.total_value) / parseInt(asset.total_unit);
-      const change = (Math.random() * 10 - 5).toFixed(2);
       const category = getAssetCategory(asset);
       
       return `
@@ -291,13 +246,12 @@
             <div class="text-muted" style="font-size: 12px;">ID: ${asset.asset_id}</div>
           </td>
           <td><span class="badge info">${category}</span></td>
-          <td>¥${price.toFixed(2)}</td>
+          <td>$${price.toFixed(2)}</td>
           <td>${asset.total_unit}</td>
-          <td>¥${parseFloat(asset.total_value).toLocaleString()}</td>
+          <td>$${parseFloat(asset.total_value).toLocaleString()}</td>
           <td>${new Date(asset.created_at).toLocaleDateString()}</td>
           <td>
             <button onclick="event.stopPropagation(); quickBuy(${asset.asset_id})" class="small success">Buy</button>
-            <button onclick="event.stopPropagation(); addToWatchlist(${asset.asset_id})" class="small">Watch</button>
           </td>
         </tr>
       `;
@@ -320,12 +274,12 @@
     }
 
     function filterAssets() {
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const category = document.getElementById('categoryFilter').value;
-      const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
-      const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
-      const minUnits = parseInt(document.getElementById('minUnits').value) || 0;
-      const maxUnits = parseInt(document.getElementById('maxUnits').value) || Infinity;
+      const searchTerm = (document.getElementById('searchInput') && document.getElementById('searchInput').value || '').toLowerCase();
+      const category = 'all';
+      const minPrice = parseFloat((document.getElementById('minPrice') && document.getElementById('minPrice').value) || 0) || 0;
+      const maxPrice = parseFloat((document.getElementById('maxPrice') && document.getElementById('maxPrice').value) || '') || Infinity;
+      const minUnits = parseInt((document.getElementById('minUnits') && document.getElementById('minUnits').value) || 0) || 0;
+      const maxUnits = parseInt((document.getElementById('maxUnits') && document.getElementById('maxUnits').value) || '') || Infinity;
       
       filteredAssets = allAssets.filter(asset => {
         const price = parseFloat(asset.total_value) / parseInt(asset.total_unit);
@@ -387,14 +341,13 @@
     }
 
     function clearFilters() {
-      document.getElementById('searchInput').value = '';
-      document.getElementById('categoryFilter').value = 'all';
-      document.getElementById('minPrice').value = '';
-      document.getElementById('maxPrice').value = '';
-      document.getElementById('minUnits').value = '';
-      document.getElementById('maxUnits').value = '';
-      document.getElementById('sortBy').value = 'name';
-      document.getElementById('sortOrder').value = 'asc';
+      if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+      if (document.getElementById('minPrice')) document.getElementById('minPrice').value = '';
+      if (document.getElementById('maxPrice')) document.getElementById('maxPrice').value = '';
+      if (document.getElementById('minUnits')) document.getElementById('minUnits').value = '';
+      if (document.getElementById('maxUnits')) document.getElementById('maxUnits').value = '';
+      if (document.getElementById('sortBy')) document.getElementById('sortBy').value = 'name';
+      if (document.getElementById('sortOrder')) document.getElementById('sortOrder').value = 'asc';
       
       filteredAssets = [...allAssets];
       currentPage = 1;
@@ -440,13 +393,12 @@
       }
     }
 
-    function showAssetDetail(assetId) {
+    async function showAssetDetail(assetId) {
       const asset = allAssets.find(a => a.asset_id == assetId);
       if (!asset) return;
       
       selectedAsset = asset;
       const price = parseFloat(asset.total_value) / parseInt(asset.total_unit);
-      const change = (Math.random() * 10 - 5).toFixed(2);
       
       document.getElementById('modalAssetName').textContent = asset.asset_name;
       document.getElementById('modalAssetContent').innerHTML = `
@@ -464,11 +416,7 @@
         <div class="row" style="margin-bottom: 20px;">
           <div class="col">
             <div class="text-muted">Unit Price</div>
-            <div style="font-size: 24px; font-weight: bold; color: var(--accent);">¥${price.toFixed(2)}</div>
-          </div>
-          <div class="col">
-            <div class="text-muted">Change</div>
-            <div class="${change > 0 ? 'text-success' : 'text-error'}" style="font-size: 18px; font-weight: bold;">${change > 0 ? '+' : ''}${change}%</div>
+            <div style="font-size: 24px; font-weight: bold; color: var(--accent);">$${price.toFixed(2)}</div>
           </div>
         </div>
         
@@ -479,7 +427,7 @@
           </div>
           <div class="col">
             <div class="text-muted">Total Value</div>
-            <div style="font-size: 18px; font-weight: bold;">¥${parseFloat(asset.total_value).toLocaleString()}</div>
+            <div style="font-size: 18px; font-weight: bold;">$${parseFloat(asset.total_value).toLocaleString()}</div>
           </div>
         </div>
         
@@ -496,6 +444,94 @@
         </div>
       `;
       
+      // Fetch fractions for this asset
+      try {
+        const fRes = await fetch(`${API}/fractions/asset/${assetId}`, { credentials: 'include' });
+        const fWrap = await fRes.json();
+        const fractions = Array.isArray(fWrap) ? fWrap : (fWrap.fractions || fWrap.items || []);
+
+        const section = document.createElement('div');
+        section.style.marginTop = '18px';
+        section.innerHTML = `<h4>Fractions (${fractions.length})</h4>`;
+
+        if (fractions.length === 0) {
+          const p = document.createElement('div');
+          p.className = 'text-muted';
+          p.textContent = 'No fractions for this asset.';
+          section.appendChild(p);
+        } else {
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>Fraction ID</th>
+                <th>Owner</th>
+                <th>Units</th>
+                <th>Active</th>
+                <th>Value/Unit</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          const tbody = table.querySelector('tbody');
+          fractions.forEach(fr => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${fr.fraction_id}</td>
+              <td>${fr.owner_id ?? '-'}</td>
+              <td>${Number(fr.units || 0).toLocaleString()}</td>
+              <td>${fr.is_active ? '<span class="badge success">Active</span>' : '<span class="badge error">Inactive</span>'}</td>
+              <td>${fr.value_perunit != null ? Number(fr.value_perunit).toLocaleString() : '-'}</td>
+              <td><button class="small" data-fid="${fr.fraction_id}">View Transactions</button></td>
+            `;
+            const btn = tr.querySelector('button');
+            btn.onclick = async (e) => {
+              e.stopPropagation();
+              btn.disabled = true;
+              // Fetch transactions for this fraction
+              const tRes = await fetch(`${API}/transactions/fraction/${fr.fraction_id}`, { credentials: 'include' });
+              const tWrap = await tRes.json();
+              const txs = Array.isArray(tWrap) ? tWrap : (tWrap.transactions || tWrap.items || tWrap.transaction_history || []);
+              // Render below this row
+              const tr2 = document.createElement('tr');
+              const td = document.createElement('td');
+              td.colSpan = 6;
+              if (txs.length === 0) {
+                td.innerHTML = '<div class="text-muted">No transactions for this fraction.</div>';
+              } else {
+                const tTable = document.createElement('table');
+                tTable.style.width = '100%';
+                tTable.innerHTML = `
+                  <thead><tr><th>Time</th><th>Type</th><th>Units</th><th>Price</th><th>From</th><th>To</th></tr></thead>
+                  <tbody>
+                    ${txs.map(t => `
+                      <tr>
+                        <td>${new Date(t.transaction_at || t.created_at || Date.now()).toLocaleString()}</td>
+                        <td>${t.transaction_type || t.type || ''}</td>
+                        <td>${t.unit_moved || t.units || 0}</td>
+                        <td>${t.price_perunit != null ? '$' + Number(t.price_perunit).toLocaleString() : '-'}</td>
+                        <td>${t.from_owner_id ?? ''}</td>
+                        <td>${t.to_owner_id ?? ''}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                `;
+                td.appendChild(tTable);
+              }
+              tr2.appendChild(td);
+              tr.parentNode.insertBefore(tr2, tr.nextSibling);
+            };
+            tbody.appendChild(tr);
+          });
+          section.appendChild(table);
+        }
+
+        document.getElementById('modalAssetContent').appendChild(section);
+      } catch (err) {
+        console.error('Failed to load fractions for asset', err);
+      }
+
       document.getElementById('assetDetailModal').style.display = 'block';
     }
 
@@ -516,10 +552,7 @@
       }
     }
 
-    function addToWatchlist(assetId) {
-      // Mock watchlist functionality
-      showMessage('Added to watchlist', true);
-    }
+    // watchlist functionality removed
 
     function refreshData() {
       fetchAssets();
@@ -552,6 +585,7 @@
     // Load data on page load
     fetchAssets();
   </script>
+  <script src="logout.js"></script>
 </body>
 </html>
 
