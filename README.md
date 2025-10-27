@@ -89,11 +89,19 @@ For detailed deployment instructions, see [Deployment.md](Document/Deployment.md
 </details>
 
 <details>
+  <summary>Admin Panel</summary>
+  
+  * Adding new assets
+  * Modifying existed assets value
+  * Assets metadata and last updated value
+</details>
+
+<details>
   <summary>Asset Management</summary>
   
   * Real-world asset registration and tracking
   * Asset value history and monitoring
-  * Asset categorization and metadata
+  * Asset metadata
   * Fractional ownership structure
 </details>
 
@@ -103,7 +111,6 @@ For detailed deployment instructions, see [Deployment.md](Document/Deployment.md
   * Buy and sell asset fractions
   * Offer creation and management
   * Transaction processing and history
-  * Portfolio rebalancing
 </details>
 
 <details>
