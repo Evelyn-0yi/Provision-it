@@ -75,6 +75,7 @@ You can deploy this application to any hosting platform of your choice. For prod
 5. Use a production WSGI server like Gunicorn: `gunicorn -w 4 -b 0.0.0.0:5001 run:app`
 
 For detailed deployment instructions, see [SetUp.md](Document/SetUp.md).
+Then follow [User_Manual.pdf](Document/User_Manual.pdf) for instructions on using the web app.
 
 <br/>
 
@@ -300,6 +301,7 @@ This project is open source and available under the [MIT License](./LICENSE).
 ## Links
 
 - [SetUp Guide](Document/SetUp.md)
+- [User_Manual.pdf](Document/User_Manual.pdf)
 - [API Documentation](Document/API_DOCUMENTATION.md)
 - [Source Code](https://github.com/Evelyn-0yi/Provision-it)
 
