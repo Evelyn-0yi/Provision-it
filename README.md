@@ -74,7 +74,7 @@ You can deploy this application to any hosting platform of your choice. For prod
 4. Initialize database: `python init_db_postgres.py`
 5. Use a production WSGI server like Gunicorn: `gunicorn -w 4 -b 0.0.0.0:5001 run:app`
 
-For detailed deployment instructions, see [Deployment.md](Document/Deployment.md).
+For detailed deployment instructions, see [SetUp.md](Document/SetUp.md).
 
 <br/>
 
@@ -299,7 +299,7 @@ This project is open source and available under the [MIT License](./LICENSE).
 
 ## Links
 
-- [Deployment Guide](Document/Deployment.md)
+- [SetUp Guide](Document/SetUp.md)
 - [API Documentation](Document/API_DOCUMENTATION.md)
 - [Source Code](https://github.com/Evelyn-0yi/Provision-it)
 
